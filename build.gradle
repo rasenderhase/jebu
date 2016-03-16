@@ -1,0 +1,42 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+
+group = 'de.nikem.jebu'
+version = '0.1.0'
+sourceCompatibility = '1.8'
+
+eclipse {
+	classpath {
+		containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+		containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-' + sourceCompatibility
+	}
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Title': 'Java Event BUs',
+		'Implementation-Version': version
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile 'javax.websocket:javax.websocket-api:1.1'
+	compile 'org.eclipse.jetty:jetty-server:9.3.7.v20160115'
+	compile 'org.eclipse.jetty:jetty-servlet:9.3.7.v20160115'
+	compile 'org.eclipse.jetty:jetty-webapp:9.3.7.v20160115'
+	compile 'org.eclipse.jetty.websocket:javax-websocket-server-impl:9.3.7.v20160115'
+	testCompile 'junit:junit:4.+'
+}
+
+[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
+
+eclipseJdt << {
+	File f = file('.settings/org.eclipse.core.resources.prefs')
+	f.write('eclipse.preferences.version=1\n')
+	f.append('encoding/<project>=UTF-8')
+}

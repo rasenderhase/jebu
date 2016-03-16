@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="icon" type="image/jpeg" href="jebu.jpg" />
+<script src="jquery-2.2.1.js"></script>
+<title>Jebu demo</title>
+</head>
+<body>
+<form id="publishForm" action="" method="post">
+	<fieldset>
+		<legend>Publish</legend>
+		<ul>
+			<li><label>eventName <input name="eventName"></label>
+			<li><label>data <textarea name="data"></textarea></label>
+		</ul>
+		<button>publish</button>
+	</fieldset>
+</form>
+<form id="registerForm" action="">
+	<fieldset>
+		<legend>Register Subscriber</legend>
+		<ul>
+			<li><label>eventName <input name="eventName"></label>
+		</ul>
+		<button>register</button>
+	</fieldset>
+</form>
+<div id="subscribers">
+</div>
+
+</body>
+<script>
+(function () {
+    "use strict";
+    var onPublish, onRegister, 
+    	uri, PublishWs, publishWs = null;
+    
+    uri = "ws://" + location.host + location.pathname + "jebu/";
+    
+    PublishWs = function (uri) {
+    	var ws;
+    	
+    	return {
+    		init : function () {
+    			var closeHandler;
+    			ws = new WebSocket(uri);
+    			closeHandler = $.proxy(function (event) {
+    				try {
+    					ws.close();
+    				} catch (error) { }
+    	    		setTimeout(this.init, 3000);
+    	        }, this);
+    	    	
+    			ws.onError = closeHandler;
+    			ws.onClose = closeHandler;
+    		},
+    		publish : function (event) {
+    			ws.send(btoa(JSON.stringify(event)));
+    		}
+    	}
+    };
+
+    publishWs = new PublishWs(uri); 
+	publishWs.init();
+    
+    onPublish = function (event) {
+    	event.preventDefault();
+
+    	publishWs.publish({
+    		eventName : $(this).find("[name='eventName']").val(),
+    		data : $(this).find("[name='data']").val()
+    	})
+    };
+    
+    onRegister = function (event) {
+    	event.preventDefault();
+    };
+    
+    $("#publishForm").on("submit", onPublish);
+    $("#registerForm").on("submit", onRegister);
+    
+}());
+</script>
+</html>
