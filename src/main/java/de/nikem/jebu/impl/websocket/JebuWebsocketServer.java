@@ -3,6 +3,7 @@ package de.nikem.jebu.impl.websocket;
 import java.net.URL;
 
 import javax.websocket.server.ServerContainer;
+import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -10,7 +11,9 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
+import de.nikem.jebu.api.EventBus;
 import de.nikem.jebu.api.JebuException;
+import de.nikem.jebu.impl.EventBusImpl;
 
 /**
  * Simple Jetty Server to start WebSocket interface of <i>jebu</i> event bus.
@@ -23,6 +26,7 @@ import de.nikem.jebu.api.JebuException;
 public class JebuWebsocketServer {
 
 	private int port;
+	private EventBus eventBus;
 
 	public void startServer() {
 		try {
@@ -37,7 +41,7 @@ public class JebuWebsocketServer {
 
 			// Initialize javax.websocket layer
 			ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-
+			
 			// Add WebSocket endpoint to javax.websocket layer
 			wscontainer.addEndpoint(JebuWebSocket.class);
 
@@ -62,6 +66,7 @@ public class JebuWebsocketServer {
 	public static void main(String[] args) {
 		JebuWebsocketServer ws = new JebuWebsocketServer();
 		ws.port = 8080;
+		ws.eventBus = new EventBusImpl();
 		ws.startServer();
 	}
 }

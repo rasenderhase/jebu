@@ -11,8 +11,12 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import de.nikem.jebu.api.EventBus;
+
 @ServerEndpoint(value = "/")
 public class JebuWebSocket {
+	public static EventBus jebu;
+	
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
 		System.out.println("Jemand hat sich verbunden!");
