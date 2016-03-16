@@ -3,7 +3,6 @@ package de.nikem.jebu.impl.websocket;
 import java.net.URL;
 
 import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
