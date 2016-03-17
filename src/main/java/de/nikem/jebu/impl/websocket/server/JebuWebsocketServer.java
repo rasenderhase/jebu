@@ -1,4 +1,4 @@
-package de.nikem.jebu.impl.websocket;
+package de.nikem.jebu.impl.websocket.server;
 
 import java.net.URL;
 
@@ -9,10 +9,10 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import de.nikem.jebu.api.EventBus;
 import de.nikem.jebu.api.JebuException;
-import de.nikem.jebu.impl.EventBusImpl;
 
 /**
  * Simple Jetty Server to start WebSocket interface of <i>jebu</i> event bus.
@@ -23,13 +23,12 @@ import de.nikem.jebu.impl.EventBusImpl;
  *      EventServer.java
  */
 public class JebuWebsocketServer {
-
+	private final Logger log = LoggerFactory.getLogger(getClass());
 	private int port;
-	private EventBus eventBus;
 
 	public void startServer() {
 		try {
-			Server server = new Server(port);
+			final Server server = new Server(port);
 
 			ContextHandlerCollection collection = new ContextHandlerCollection();
 			server.setHandler(collection);
@@ -42,21 +41,25 @@ public class JebuWebsocketServer {
 			ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
 			
 			// Add WebSocket endpoint to javax.websocket layer
-			wscontainer.addEndpoint(JebuWebSocket.class);
+			wscontainer.addEndpoint(JebuServerEndpoint.class);
 
 			final URL warUrl = JebuWebsocketServer.class.getClassLoader().getResource("de/nikem/jebu/site");
 			final String warUrlString = warUrl.toExternalForm();
-			System.err.println("doc root: " + warUrlString);
+			log.debug("doc root: " + warUrlString);
 			collection.addHandler(new WebAppContext(warUrlString, "/"));
 
 			server.start();
-			System.err.println("Server gestartet.");
+			log.info("Server started on port {}", port);
 			server.join();
 		} catch (Exception e) {
 			throw new JebuException(e);
 		}
 	}
 
+	public void setPort(int port) {
+		this.port = port;
+	}
+	
 	/**
 	 * Startet den Server auf Port 8080
 	 * @param args
@@ -64,8 +67,7 @@ public class JebuWebsocketServer {
 	 */
 	public static void main(String[] args) {
 		JebuWebsocketServer ws = new JebuWebsocketServer();
-		ws.port = 8080;
-		ws.eventBus = new EventBusImpl();
+		ws.setPort(8080);
 		ws.startServer();
 	}
 }

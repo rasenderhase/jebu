@@ -13,6 +13,9 @@ eclipse {
 	}
 }
 
+sourceSets.main.java.srcDirs += 'src/main/webapp'
+
+
 jar {
 	manifest {
 		attributes 'Implementation-Title': 'Java Event BUs',
@@ -30,6 +33,7 @@ dependencies {
 	compile 'org.eclipse.jetty:jetty-servlet:9.3.7.v20160115'
 	compile 'org.eclipse.jetty:jetty-webapp:9.3.7.v20160115'
 	compile 'org.eclipse.jetty.websocket:javax-websocket-server-impl:9.3.7.v20160115'
+	compile 'org.slf4j:slf4j-api:1.7.19'
 	testCompile 'junit:junit:4.+'
 }
 
