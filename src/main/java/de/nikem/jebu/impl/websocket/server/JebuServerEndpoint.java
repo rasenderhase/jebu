@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -106,12 +107,16 @@ public class JebuServerEndpoint {
 		log.debug("Socket Closed: {}", reason);
 		if (PATH_MANAGER.equals(path)) {
 			getManagerSessions().remove(session);
+			publishManagers();
+		} else if (PATH_EVENTBUS.equals(path)) {
+			getJebu().unsubscribe(new JebuWebSocketSubscriber(session));
 		}
 	}
 
 	@OnError
 	public void onError(Throwable cause, @PathParam("path") String path) {
-		log.error("websocket error", System.err);
+		log.error("websocket error {{}}", path);
+		log.error("websocket error", cause);
 	}
 
 	private void publishManagers() {
@@ -136,9 +141,18 @@ public class JebuServerEndpoint {
 				}
 				w.append(']');
 			}
+			w.append("},");
+			quote("managerSessions", w).append(": [");
+			boolean firstSub = true;
+			for (Session session : getManagerSessions()) {
+				if (!firstSub) {
+					w.append(',');
+				}
+				firstSub = false;
+				quote(session.getId(), w);
+			}
+			w.append(']');
 			w.append('}');
-			w.append('}');
-			
 			for (Session session : getManagerSessions()) {
 				session.getAsyncRemote().sendText(w.toString());
 			}
@@ -155,6 +169,13 @@ public class JebuServerEndpoint {
 		return jebu;
 	}
 
+	@Override
+	protected void finalize() throws Throwable {
+		for (Session session : getManagerSessions()) {
+			session.close(new CloseReason(CloseCodes.GOING_AWAY, "good night!"));
+		}
+	}
+	
 	public static Writer quote(String string, Writer w) throws IOException {
 		if (string == null || string.length() == 0) {
 			w.write("\"\"");

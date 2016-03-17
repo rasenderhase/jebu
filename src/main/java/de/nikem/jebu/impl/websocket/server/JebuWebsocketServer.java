@@ -1,6 +1,7 @@
 package de.nikem.jebu.impl.websocket.server;
 
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashSet;
 
 import javax.websocket.server.ServerContainer;
@@ -46,7 +47,7 @@ public class JebuWebsocketServer {
 			ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
 			ServerEndpointConfig config = configBuilder.build();
 			config.getUserProperties().put("jebu", new EventBusImpl());
-			config.getUserProperties().put("managerSessions", new HashSet<>());
+			config.getUserProperties().put("managerSessions", Collections.synchronizedCollection(new HashSet<>()));
 			wscontainer.addEndpoint(config);
 			
 			//static content
