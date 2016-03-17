@@ -78,7 +78,7 @@ public class EventBusImpl implements EventBus {
 		return getSubscriberMap().isEmpty();
 	}
 
-	protected Map<String, Collection<Subscriber>> getSubscriberMap() {
+	public Map<String, Collection<Subscriber>> getSubscriberMap() {
 		return subscriberMap;
 	}
 

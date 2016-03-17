@@ -1,8 +1,10 @@
 package de.nikem.jebu.impl.websocket.server;
 
 import java.net.URL;
+import java.util.HashSet;
 
 import javax.websocket.server.ServerContainer;
+import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.nikem.jebu.api.JebuException;
+import de.nikem.jebu.impl.EventBusImpl;
 
 /**
  * Simple Jetty Server to start WebSocket interface of <i>jebu</i> event bus.
@@ -36,13 +39,17 @@ public class JebuWebsocketServer {
 			ServletContextHandler context = new ServletContextHandler();
 			context.setContextPath("/jebu");
 			collection.addHandler(context);
-
 			// Initialize javax.websocket layer
 			ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-			
 			// Add WebSocket endpoint to javax.websocket layer
-			wscontainer.addEndpoint(JebuServerEndpoint.class);
-
+			
+			ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
+			ServerEndpointConfig config = configBuilder.build();
+			config.getUserProperties().put("jebu", new EventBusImpl());
+			config.getUserProperties().put("managerSessions", new HashSet<>());
+			wscontainer.addEndpoint(config);
+			
+			//static content
 			final URL warUrl = JebuWebsocketServer.class.getClassLoader().getResource("de/nikem/jebu/site");
 			final String warUrlString = warUrl.toExternalForm();
 			log.debug("doc root: " + warUrlString);

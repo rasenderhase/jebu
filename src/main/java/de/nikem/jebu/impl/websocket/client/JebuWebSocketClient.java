@@ -110,7 +110,7 @@ public class JebuWebSocketClient implements EventBus {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		URI uri = new URI("ws://localhost:8080/jebu/");
+		URI uri = new URI("ws://localhost:8080/jebu/eventbus/");
 		
 		JebuWebSocketClient client = new JebuWebSocketClient(uri);
 		
@@ -141,13 +141,26 @@ public class JebuWebSocketClient implements EventBus {
 		t.setDaemon(true);
 		t.start();
 		
-		Thread.sleep(1000);
+		Thread.sleep(3000);
 		
 		DemoSubscriber s = new DemoSubscriber();
 		client.subscribe("test.event.1", s);
+		Thread.sleep(3000);
 		client.subscribe("test.event.2", s);
+		Thread.sleep(3000);
 		client.subscribe("test.event.1", new DemoSubscriber());
-		
+		Thread.sleep(3000);
 		client.publish("test.event.1", "Hallo!");
+		
+		while (true) {
+			Thread.sleep(3000);
+			client.unsubscribe("test.event.2", s);
+			Thread.sleep(1000);
+			client.publish("test.event.2", "Hi 2!");
+			Thread.sleep(1000);
+			client.subscribe("test.event.2", s);
+			Thread.sleep(1000);
+			client.publish("test.event.2", "Hoi 2!");
+		}
 	}
 }

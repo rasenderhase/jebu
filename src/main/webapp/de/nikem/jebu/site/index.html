@@ -8,48 +8,26 @@
 html {
 	font-family: sans-serif;
 }
-li {
-	list-style: none;
-}
-input, textarea {
-	display: block;
-}
 </style>
-<title>Jebu demo</title>
+<title>Jebu Manager</title>
 </head>
 <body>
-<form id="publishForm" action="" method="post">
-	<fieldset>
-		<legend>Publish</legend>
-		<ul>
-			<li><label>eventName <input name="eventName"></label>
-			<li><label>data <textarea name="data"></textarea></label>
-		</ul>
-		<button>publish</button>
-	</fieldset>
-</form>
-<form id="subscribeForm" action="">
-	<fieldset>
-		<legend>add Subscriber</legend>
-		<ul>
-			<li><label>eventName <input name="eventName"></label>
-		</ul>
-		<button>subscribe</button>
-	</fieldset>
-</form>
-<div id="subscribers">
-</div>
-
+	<h1>Jebu Manager</h1>
+	<table>
+		<thead>
+			<tr><th>eventName</th><th>Subscriber</th></tr>
+		</thead>
+		<tbody></tbody>
+	</table>
 </body>
 <script>
 (function () {
     "use strict";
-    var onPublish, onSubscribe, 
-    	uri, PublishWs, publishWs = null;
+	var uri = "ws://" + location.host + location.pathname + "jebu/manager/",
+		Ws, ws;
     
-    uri = "ws://" + location.host + location.pathname + "jebu/";
-    
-    PublishWs = function (uri) {
+	
+	Ws = function (uri) {
     	var ws;
     	
     	return {
@@ -65,33 +43,28 @@ input, textarea {
     	    	
     			ws.onError = closeHandler;
     			ws.onClose = closeHandler;
-    		},
-    		publish : function (event) {
-    			ws.send(btoa(JSON.stringify(event)));
+    			
+    			ws.onmessage = function (evt) {
+    				var json = JSON.parse(evt.data),
+    					tbody = $("tbody");
+    				tbody.html("");
+    				
+    				$.each(json.subscriberMap, function (eventName, collection) {
+    					$.each(collection, function (idx, subscriberId) {
+    						var tr = $("<tr><td></td><td></td></tr>");
+    						tr.find("td").eq(0).append(document.createTextNode(eventName));
+    						tr.find("td").eq(1).append(document.createTextNode(subscriberId));
+    						tbody.append(tr);
+    					})
+    				});
+    			};
     		}
     	}
     };
-
-    publishWs = new PublishWs(uri); 
-	publishWs.init();
-    
-    onPublish = function (event) {
-    	event.preventDefault();
-
-    	publishWs.publish({
-    		action : "publish",
-    		eventName : $(this).find("[name='eventName']").val(),
-    		data : $(this).find("[name='data']").val()
-    	})
-    };
-    
-    onSubscribe = function (event) {
-    	event.preventDefault();
-    };
-    
-    $("#publishForm").on("submit", onPublish);
-    $("#subscribeForm").on("submit", onSubscribe);
-    
+	
+    ws = new Ws(uri);
+    ws.init();
+		
 }());
 </script>
 </html>
