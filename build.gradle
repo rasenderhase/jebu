@@ -4,6 +4,7 @@ allprojects {
 	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'eclipse'
+	apply plugin: 'jacoco'
 	
 	group = 'de.nikem.jebu'
 	version = '0.1.0-SNAPSHOT'
@@ -26,6 +27,15 @@ allprojects {
 		systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'trace'
 		testLogging.showStandardStreams = true
 	}
+	
+	jacocoTestReport {
+		reports {
+			xml.enabled = true
+			html.enabled = true
+		}
+	}
+	
+	check.dependsOn jacocoTestReport
 	
 	[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
 	
