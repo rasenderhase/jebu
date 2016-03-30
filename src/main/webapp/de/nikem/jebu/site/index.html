@@ -22,20 +22,36 @@ html {
 #managerConnection.established:AFTER {
 	content: "established";
 }
+td {
+	border: 1px solid gray;
+}
+table {
+	border-collapse: collapse;
+}
 </style>
 <title>Jebu Manager</title>
 </head>
 <body>
 	<h1>Jebu Manager</h1>
 	<p>
-	<label>Manager Connection: <span id="managerConnection"></span></label>
+	<label>Manager connection: <span id="managerConnection"></span></label>
 	</p>
 	<p>
-	<label>Manager Sessions: <span id="managerSessions"></span></label>
+	<label>Manager sessions: <span id="managerSessions"></span></label>
 	</p>
+	<div style="height: 100px; overflow-y: scroll;">
 	<table>
+		<caption>Subscriptions</caption>
 		<thead>
-			<tr><th>eventName</th><th>Subscriber</th></tr>
+			<tr><th>Event name</th><th>Subscriber</th></tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+	</div>
+	<table>
+		<caption>Events</caption>
+		<thead>
+			<tr><th>Sender</th><th>Action</th><th>Event name</th><th>Timestamp</th><th>Data</th></tr>
 		</thead>
 		<tbody></tbody>
 	</table>
@@ -86,7 +102,13 @@ html {
    			
    			ws.onmessage = $.proxy(function (evt) {
    				var json = JSON.parse(evt.data),
-   					tbody = $("tbody");
+   					tbody, tr;
+
+   				$("#managerSessions").html(json.managerSessions.length);
+   				this.connectionEstablished();
+
+   				//Subscribers
+   				tbody = $("tbody").eq(0);
    				tbody.html("");
    				
    				$.each(json.subscriberMap, function (eventName, collection) {
@@ -98,8 +120,22 @@ html {
    					})
    				});
    				
-   				$("#managerSessions").html(json.managerSessions.length);
-   				this.connectionEstablished();
+   				//Events
+   				if (json.event) {
+   					tbody = $("tbody").eq(1);
+   	   				if (tbody.find("tr").length < 10) {
+   						tr = $("<tr><td></td><td></td><td></td><td></td><td></td></tr>");
+   	   				} else {
+   	   					tr = tbody.find("tr").eq(0);
+   	   				}
+   					tr.find("td").eq(0).empty().append(document.createTextNode(json.event.sender));
+   					tr.find("td").eq(1).empty().append(document.createTextNode(json.event.action));
+   					tr.find("td").eq(2).empty().append(document.createTextNode(json.event.eventName));
+   					tr.find("td").eq(3).empty().append(document.createTextNode(json.event.timestamp));
+   					tr.find("td").eq(4).empty().append(document.createTextNode(json.event.data));
+   					tbody.append(tr);	
+   				}
+   				
    			}, this);
    			
    		};

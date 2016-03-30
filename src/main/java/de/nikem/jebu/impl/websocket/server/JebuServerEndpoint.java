@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 
@@ -44,12 +45,17 @@ public class JebuServerEndpoint {
 	private EventBusImpl jebu = null;
 	private Collection<Session> managerSessions = null;
 
-	@SuppressWarnings("unchecked")
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config, @PathParam("path") String path) {
 		log.debug("connect on {} {{}} from {}", this, path, session.getId());
-		jebu = (EventBusImpl) config.getUserProperties().get("jebu");
-		managerSessions = (Collection<Session>) config.getUserProperties().get("managerSessions");
+		
+		JebuServerContext serverContext = (JebuServerContext) config.getUserProperties().get(JebuServerContext.JEBU_SERVER_CONTEXT);
+		if (serverContext == null) {
+			config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, serverContext);
+		}
+		
+		jebu = serverContext.getJebu();
+		managerSessions = serverContext.getManagerSessions();
 		
 		if (PATH_MANAGER.equals(path)) {
 			getManagerSessions().add(session);
@@ -68,8 +74,9 @@ public class JebuServerEndpoint {
 	}
 
 	private void onEventbusMessage(byte[] message, Session session) {
+		JebuWebsocketEvent event = null;
 		try (InputStream is = new ByteArrayInputStream(message); ObjectInputStream ois = new ObjectInputStream(is);) {
-			JebuWebsocketEvent event = (JebuWebsocketEvent) ois.readObject();
+			event = (JebuWebsocketEvent) ois.readObject();
 			log.trace("event from {}: {}", session.getId(), event);
 			EventBus jebu = getJebu();
 			switch (event.getAction()) {
@@ -90,7 +97,7 @@ public class JebuServerEndpoint {
 		} catch (IOException | ClassNotFoundException e) {
 			log.error("message processing error", e);
 		}
-		publishManagers();
+		publishManagers(event, session);
 	}
 
 	@OnMessage
@@ -120,6 +127,9 @@ public class JebuServerEndpoint {
 	}
 
 	private void publishManagers() {
+		publishManagers(null, null);
+	}
+	private void publishManagers(JebuWebsocketEvent event, Session session) {
 		Writer w = new StringWriter();
 		try {
 			w.append("{");
@@ -144,17 +154,39 @@ public class JebuServerEndpoint {
 			w.append("},");
 			quote("managerSessions", w).append(": [");
 			boolean firstSub = true;
-			for (Session session : getManagerSessions()) {
+			for (Session managerSession : getManagerSessions()) {
 				if (!firstSub) {
 					w.append(',');
 				}
 				firstSub = false;
-				quote(session.getId(), w);
+				quote(managerSession.getId(), w);
 			}
 			w.append(']');
+			if (event != null) {
+				String data = null;
+				if (event.getData() != null) {
+					data = event.getData().toString();
+					if (data.length() > 100) {
+						data = data.substring(0, 97) + "...";
+					}
+				}
+				
+				w.append(',');
+				quote("event", w).append(": {");
+				quote("sender", w).append(':');
+				quote(session.getId(), w).append(',');
+				quote("action", w).append(':');
+				quote(event.getAction().toString(), w).append(',');
+				quote("eventName", w).append(':');
+				quote(event.getEventName(), w).append(',');
+				quote("data", w).append(':');
+				quote(data, w).append(',');
+				quote("timestamp", w).append(':');
+				quote(new Timestamp(System.currentTimeMillis()).toString(), w).append('}');
+			}
 			w.append('}');
-			for (Session session : getManagerSessions()) {
-				session.getAsyncRemote().sendText(w.toString());
+			for (Session managerSession : getManagerSessions()) {
+				managerSession.getAsyncRemote().sendText(w.toString());
 			}
 		} catch (IOException e) {
 			log.debug("JSON wirte error", e);

@@ -22,7 +22,7 @@ import de.nikem.jebu.impl.EventBusImpl;
 import de.nikem.jebu.impl.JebuRemoveSubscriberException;
 import de.nikem.jebu.impl.websocket.server.JebuWebsocketEvent;
 import de.nikem.jebu.impl.websocket.server.JebuWebsocketEvent.Action;
-import de.nikem.jebu.impl.websocket.server.JebuWebsocketServer;
+import de.nikem.jebu.impl.websocket.server.jetty.JebuWebsocketServer;
 
 public class JebuWebSocketClient implements EventBus {
 	private final Logger log = LoggerFactory.getLogger(getClass());

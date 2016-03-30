@@ -1,8 +1,6 @@
-package de.nikem.jebu.impl.websocket.server;
+package de.nikem.jebu.impl.websocket.server.jetty;
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashSet;
 
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
@@ -16,7 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.nikem.jebu.api.JebuException;
-import de.nikem.jebu.impl.EventBusImpl;
+import de.nikem.jebu.impl.websocket.server.JebuServerContext;
+import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
 
 /**
  * Simple Jetty Server to start WebSocket interface of <i>jebu</i> event bus.
@@ -46,8 +45,10 @@ public class JebuWebsocketServer {
 			
 			ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
 			ServerEndpointConfig config = configBuilder.build();
-			config.getUserProperties().put("jebu", new EventBusImpl());
-			config.getUserProperties().put("managerSessions", Collections.synchronizedCollection(new HashSet<>()));
+			if (!config.getUserProperties().containsKey(JebuServerContext.JEBU_SERVER_CONTEXT)) {
+				config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, new JebuServerContext());
+			}
+			
 			wscontainer.addEndpoint(config);
 			
 			//static content
