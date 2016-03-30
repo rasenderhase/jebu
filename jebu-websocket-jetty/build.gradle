@@ -1,0 +1,7 @@
+dependencies {
+	compile project(':jebu-websocket-server')
+	compile 'org.eclipse.jetty:jetty-server:9.3.7.v20160115'
+	compile 'org.eclipse.jetty:jetty-servlet:9.3.7.v20160115'
+	compile 'org.eclipse.jetty:jetty-webapp:9.3.7.v20160115'
+	compile 'org.eclipse.jetty.websocket:javax-websocket-server-impl:9.3.7.v20160115'
+}

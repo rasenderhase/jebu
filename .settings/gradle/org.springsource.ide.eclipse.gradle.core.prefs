@@ -1,5 +1,5 @@
 #org.springsource.ide.eclipse.gradle.core.preferences.GradleProjectPreferences
-#Mon Mar 14 21:54:56 CET 2016
-build.family.org.gradle.tooling.model.eclipse.HierarchicalEclipseProject=;
+#Wed Mar 30 13:12:58 CEST 2016
+build.family.org.gradle.tooling.model.eclipse.HierarchicalEclipseProject=;jebu-api;jebu-websocket-client;jebu-websocket-jetty;jebu-websocket-server;
 org.springsource.ide.eclipse.gradle.linkedresources=
 org.springsource.ide.eclipse.gradle.rootprojectloc=

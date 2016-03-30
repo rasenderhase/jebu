@@ -1,0 +1,1 @@
+include 'jebu-api', 'jebu-websocket-client', 'jebu-websocket-server', 'jebu-websocket-jetty'

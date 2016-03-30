@@ -1,0 +1,4 @@
+dependencies {
+	compile project(':jebu-api')
+	compile 'javax.websocket:javax.websocket-api:1.1'
+}
