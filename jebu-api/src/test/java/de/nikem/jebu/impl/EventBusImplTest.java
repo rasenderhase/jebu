@@ -5,8 +5,10 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,7 +51,38 @@ public class EventBusImplTest {
 		subject.publish("other.test.event", "Test data");
 		verify(subscriber, never()).publish(anyString(), any());
 	}
-
+	
+	@Test
+	public void testPublishRemoveSubscriber() {
+		doThrow(new JebuRemoveSubscriberException()).when(subscriber).publish("test.event", "Test data");
+		subject.subscribe("test.event", subscriber);
+		
+		subject.publish("test.event", "Test data");
+		verify(subscriber, times(1)).publish("test.event", "Test data");
+		assertThat("subscriber should have been removed", subject.hasSubscribers(), is(false));
+		
+		reset(subscriber);
+		subject.publish("test.event", "Test data");
+		verify(subscriber, never()).publish("test.event", "Test data");
+	}
+	
+	@Test
+	public void testPublishRemoveSubscriber2() {
+		doThrow(new JebuRemoveSubscriberException()).when(subscriber).publish("test.event", "Test data");
+		subject.subscribe("test.event", subscriber);
+		subject.subscribe("test.event", otherSubscriber);
+		
+		subject.publish("test.event", "Test data");
+		verify(subscriber, times(1)).publish("test.event", "Test data");
+		verify(otherSubscriber, times(1)).publish("test.event", "Test data");
+		assertThat("other subscriber should still be there", subject.hasSubscribers(), is(true));
+		
+		reset(subscriber, otherSubscriber);
+		subject.publish("test.event", "Test data");
+		verify(subscriber, never()).publish("test.event", "Test data");
+		verify(otherSubscriber, times(1)).publish("test.event", "Test data");
+	}
+	
 	@Test
 	public void testSubscribe() {
 		subject.subscribe("test.event", subscriber);
@@ -79,6 +112,24 @@ public class EventBusImplTest {
 		subject.publish("other.test.event", "Test data");
 		verify(subscriber, never()).publish(anyString(), any());
 		verify(otherSubscriber, times(1)).publish("other.test.event", "Test data");
+	}
+	
+	@Test
+	public void testUnsubscribeSubscriberByEventNameHack() {
+		subject.subscribe("test.event", subscriber);
+		subject.subscribe("other.test.event", subscriber);
+		subject.subscribe("other.test.event", otherSubscriber);
+		subject.getSubscriberMap().remove("other.test.event");
+		subject.unsubscribe("other.test.event", subscriber);
+
+		assertThat("subscriber map should contain subscriber in collection for key ”test.event”.",
+				subject.getSubscriberMap().get("test.event").contains(subscriber), is(true));
+		assertThat("subscriber map should not contain collection for key ”other.test.event”.",
+				subject.getSubscriberMap().get("other.test.event"), is((Collection<Subscriber>) null));
+		
+		subject.publish("other.test.event", "Test data");
+		verify(subscriber, never()).publish(anyString(), any());
+		verify(otherSubscriber, never()).publish(anyString(), any());
 	}
 
 	@Test
@@ -113,6 +164,28 @@ public class EventBusImplTest {
 		
 		assertThat("there should be no more subscribers for event test.event", subject.hasSubscribers("test.event"), is(false));
 		assertThat("there should be subscribers for event other.test.event", subject.hasSubscribers("other.test.event"), is(true));
+	}
+	
+	@Test
+	public void testHasSubscribersByEventNameHack() {
+		subject.subscribe("test.event", subscriber);
+		subject.subscribe("other.test.event", subscriber);
+		subject.subscribe("other.test.event", otherSubscriber);
+		subject.getSubscriberMap().remove("other.test.event");
+		
+		assertThat("there should be subscribers for event test.event", subject.hasSubscribers("test.event"), is(true));
+		assertThat("there should be no subscribers for event other.test.event", subject.hasSubscribers("other.test.event"), is(false));
+	}
+	
+	@Test
+	public void testHasSubscribersByEventNameHack2() {
+		subject.subscribe("test.event", subscriber);
+		subject.subscribe("other.test.event", subscriber);
+		subject.subscribe("other.test.event", otherSubscriber);
+		subject.getSubscriberMap().get("other.test.event").clear();
+		
+		assertThat("there should be subscribers for event test.event", subject.hasSubscribers("test.event"), is(true));
+		assertThat("there should be no subscribers for event other.test.event", subject.hasSubscribers("other.test.event"), is(false));
 	}
 
 	@Test

@@ -32,6 +32,10 @@ public class EventBusImpl implements EventBus {
 					} catch (JebuRemoveSubscriberException ex) {
 						log.debug("remove subscriber due to exception: " + subscriber.getId(), ex);
 						it.remove();
+						if (subscriberCollection.isEmpty()) {
+							log.trace("remove subscriber collection for: {}", eventName);
+							getSubscriberMap().remove(eventName);
+						}
 					}
 				}
 			}
