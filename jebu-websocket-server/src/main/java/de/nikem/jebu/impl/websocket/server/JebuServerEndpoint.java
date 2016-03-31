@@ -93,7 +93,12 @@ public class JebuServerEndpoint {
 				break;
 			case publish:
 				jebu.publish(event.getEventName(), event);
+				break;
+			default:
+				log.error("unknown action {}", event.getAction());
+				break;
 			}
+				
 
 		} catch (IOException | ClassNotFoundException e) {
 			log.error("message processing error", e);
@@ -227,6 +232,9 @@ public class JebuServerEndpoint {
 			c = string.charAt(i);
 			switch (c) {
 			case '\\':
+				w.write('\\');
+				w.write(c);
+				break;
 			case '"':
 				w.write('\\');
 				w.write(c);
@@ -262,6 +270,7 @@ public class JebuServerEndpoint {
 				} else {
 					w.write(c);
 				}
+				break;
 			}
 		}
 		w.write('"');

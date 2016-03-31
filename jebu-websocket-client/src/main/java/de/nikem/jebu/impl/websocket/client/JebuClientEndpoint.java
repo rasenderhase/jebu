@@ -23,14 +23,14 @@ import de.nikem.jebu.impl.websocket.JebuWebsocketEvent;
 @ClientEndpoint
 public class JebuClientEndpoint {
 	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	private final EventBus jebu;
-	
+
 	public JebuClientEndpoint(EventBus clientJebu) {
 		this.jebu = clientJebu;
 	}
 
-	
+
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
 		log.debug("connect to " + session.getId());
@@ -44,10 +44,11 @@ public class JebuClientEndpoint {
 			case publish:
 				jebu.publish(event.getEventName(), event.getData());
 				break;
-				default:
-					log.debug("action " + event.getAction() + " cannot be processed by client.");
+			default:
+				log.debug("action " + event.getAction() + " cannot be processed by client.");
+				break;
 			}
-			
+
 		} catch (IOException | ClassNotFoundException e) {
 			log.error("message processing error", System.err);
 		}

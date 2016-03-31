@@ -4,7 +4,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.logging.Formatter;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
@@ -38,7 +37,7 @@ public class JebuFormatter extends Formatter {
      * <li>{@code source} - a string representing the caller, if available;
      *     otherwise, the logger's name.</li>
      * <li>{@code logger} - the logger's name.</li>
-     * <li>{@code level} - the {@linkplain Level#getLocalizedName
+     * <li>{@code level} - the {@linkplain java.util.logging.Level#getLocalizedName
      *     log level}.</li>
      * <li>{@code message} - the formatted log message
      *     returned from the {@link Formatter#formatMessage(LogRecord)}
