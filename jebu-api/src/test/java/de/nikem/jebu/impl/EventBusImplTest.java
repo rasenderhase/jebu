@@ -1,5 +1,6 @@
 package de.nikem.jebu.impl;
 
+import static de.nikem.jebu.util.junit.MockitoTool.assertBevaviour;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
@@ -41,7 +41,7 @@ public class EventBusImplTest {
 		subject.subscribe("test.event", subscriber);
 
 		subject.publish("test.event", "Test data");
-		verify(subscriber, times(1)).publish("test.event", "Test data");
+		assertBevaviour(subscriber, times(1)).publish("test.event", "Test data");
 	}
 
 	@Test
@@ -49,7 +49,7 @@ public class EventBusImplTest {
 		subject.subscribe("test.event", subscriber);
 
 		subject.publish("other.test.event", "Test data");
-		verify(subscriber, never()).publish(anyString(), any());
+		assertBevaviour(subscriber, never()).publish(anyString(), any());
 	}
 	
 	@Test
@@ -58,12 +58,12 @@ public class EventBusImplTest {
 		subject.subscribe("test.event", subscriber);
 		
 		subject.publish("test.event", "Test data");
-		verify(subscriber, times(1)).publish("test.event", "Test data");
+		assertBevaviour(subscriber, times(1)).publish("test.event", "Test data");
 		assertThat("subscriber should have been removed", subject.hasSubscribers(), is(false));
 		
 		reset(subscriber);
 		subject.publish("test.event", "Test data");
-		verify(subscriber, never()).publish("test.event", "Test data");
+		assertBevaviour(subscriber, never()).publish("test.event", "Test data");
 	}
 	
 	@Test
@@ -73,14 +73,14 @@ public class EventBusImplTest {
 		subject.subscribe("test.event", otherSubscriber);
 		
 		subject.publish("test.event", "Test data");
-		verify(subscriber, times(1)).publish("test.event", "Test data");
-		verify(otherSubscriber, times(1)).publish("test.event", "Test data");
+		assertBevaviour(subscriber, times(1)).publish("test.event", "Test data");
+		assertBevaviour(otherSubscriber, times(1)).publish("test.event", "Test data");
 		assertThat("other subscriber should still be there", subject.hasSubscribers(), is(true));
 		
 		reset(subscriber, otherSubscriber);
 		subject.publish("test.event", "Test data");
-		verify(subscriber, never()).publish("test.event", "Test data");
-		verify(otherSubscriber, times(1)).publish("test.event", "Test data");
+		assertBevaviour(subscriber, never()).publish("test.event", "Test data");
+		assertBevaviour(otherSubscriber, times(1)).publish("test.event", "Test data");
 	}
 	
 	@Test
@@ -110,8 +110,8 @@ public class EventBusImplTest {
 				subject.getSubscriberMap().get("other.test.event").contains(subscriber), is(false));
 		
 		subject.publish("other.test.event", "Test data");
-		verify(subscriber, never()).publish(anyString(), any());
-		verify(otherSubscriber, times(1)).publish("other.test.event", "Test data");
+		assertBevaviour(subscriber, never()).publish(anyString(), any());
+		assertBevaviour(otherSubscriber, times(1)).publish("other.test.event", "Test data");
 	}
 	
 	@Test
@@ -128,8 +128,8 @@ public class EventBusImplTest {
 				subject.getSubscriberMap().get("other.test.event"), is((Collection<Subscriber>) null));
 		
 		subject.publish("other.test.event", "Test data");
-		verify(subscriber, never()).publish(anyString(), any());
-		verify(otherSubscriber, never()).publish(anyString(), any());
+		assertBevaviour(subscriber, never()).publish(anyString(), any());
+		assertBevaviour(otherSubscriber, never()).publish(anyString(), any());
 	}
 
 	@Test
@@ -147,8 +147,8 @@ public class EventBusImplTest {
 				subject.getSubscriberMap().get("other.test.event").contains(subscriber), is(false));
 		
 		subject.publish("other.test.event", "Test data");
-		verify(subscriber, never()).publish(anyString(), any());
-		verify(otherSubscriber, times(1)).publish("other.test.event", "Test data");
+		assertBevaviour(subscriber, never()).publish(anyString(), any());
+		assertBevaviour(otherSubscriber, times(1)).publish("other.test.event", "Test data");
 	}
 
 	@Test
