@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 
 import javax.websocket.ContainerProvider;
@@ -29,6 +30,7 @@ public class JebuWebSocketClient implements EventBus {
 	private final URI uri;
 	private final EventBusImpl clientJebu;
 	private Session session = null;
+	private int reconnectMs = 3000;
 	
 	public JebuWebSocketClient(URI uri) {
 		this.uri = uri;
@@ -78,13 +80,32 @@ public class JebuWebSocketClient implements EventBus {
 		if (session == null) {
 			log.info("trying to connect to {}" , uri);
 			WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+
+			JebuClientEndpoint client = new JebuClientEndpoint(clientJebu, (endpoint) -> {
+				boolean connected = false;
+				try {
+					session = container.connectToServer(endpoint, uri);
+					
+					//register all of my events
+					for (String eventName : clientJebu.getSubscriberMap().keySet()) {
+						JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.subscribe, null);
+						sendData(data);
+					}
+					connected = true;
+					
+				} catch (DeploymentException | IOException e) {
+					log.error("cannot establish connection to websocket server {}. Retry after {} ms.", e, getReconnectMs());
+					
+					try {
+						Thread.sleep(getReconnectMs());
+					} catch (Exception e1) {
+						throw new JebuException(e1);
+					}
+				}
+				return connected;
+			});
 			
-			try {
-				session = container.connectToServer(new JebuClientEndpoint(clientJebu), uri);
-			} catch (DeploymentException | IOException e) {
-				log.error("cannot establish connection to websocket server", e);
-				throw new JebuException(e);
-			}
+			client.connect();
 		}
 		return session;
 	}
@@ -93,18 +114,52 @@ public class JebuWebSocketClient implements EventBus {
 	 * @param data
 	 */
 	private void sendData(Object data) {
-		try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos);) {
-			out.writeObject(data);
-			out.flush();
-			ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
-			getSession().getAsyncRemote().sendBinary(buf);
-		} catch (IOException e) {
-			log.debug("error during communication of session {}", session.getId());
-			throw new JebuRemoveSubscriberException(e);
+		Session session = getSession();
+		if (session != null) {
+			try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos);) {
+				out.writeObject(data);
+				out.flush();
+				ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
+				session.getAsyncRemote().sendBinary(buf);
+			} catch (IOException e) {
+				log.debug("error during communication of session {}", session.getId());
+				throw new JebuRemoveSubscriberException(e);
+			}
+		} else {
+			log.debug("Cannot send data. No connection.");
 		}
 	}
 
 	public void setSession(Session session) {
 		this.session = session;
+	}
+
+	protected int getReconnectMs() {
+		return reconnectMs;
+	}
+
+	public void setReconnectMs(int reconnectMs) {
+		this.reconnectMs = reconnectMs;
+	}
+	
+	public static void main(String[] args) throws URISyntaxException, IOException {
+		Logger log = LoggerFactory.getLogger(JebuWebSocketClient.class);
+		
+		URI serverUri = new URI(args[0]);
+		JebuWebSocketClient client = new JebuWebSocketClient(serverUri);
+		client.subscribe("test.event.1", new Subscriber() {
+			
+			@Override
+			public void publish(String eventName, Object data) {
+				log.debug("event {} received with data {}", eventName, data);
+			}
+			
+			@Override
+			public String getId() {
+				return "subscriber1";
+			}
+		});
+		System.out.println("press any key to stop client...");
+		System.in.read();
 	}
 }

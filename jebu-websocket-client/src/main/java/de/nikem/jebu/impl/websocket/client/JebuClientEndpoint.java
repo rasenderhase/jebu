@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.function.Function;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -25,11 +26,12 @@ public class JebuClientEndpoint {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final EventBus jebu;
+	private final Function<JebuClientEndpoint, Boolean> connect;
 
-	public JebuClientEndpoint(EventBus clientJebu) {
+	public JebuClientEndpoint(EventBus clientJebu, Function<JebuClientEndpoint, Boolean> connect) {
 		this.jebu = clientJebu;
+		this.connect = connect;
 	}
-
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
@@ -63,10 +65,15 @@ public class JebuClientEndpoint {
 	@OnClose
 	public void onClose(CloseReason reason) {
 		log.debug("Socket Closed: {}", reason);
+		connect();
 	}
 
 	@OnError
 	public void onError(Throwable cause) {
 		log.error("websocket error", System.err);
+	}
+	
+	public void connect() {
+		while (!connect.apply(this));
 	}
 }

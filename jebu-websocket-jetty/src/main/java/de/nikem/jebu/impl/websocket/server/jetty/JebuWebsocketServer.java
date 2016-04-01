@@ -26,57 +26,87 @@ import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
  *      EventServer.java
  */
 public class JebuWebsocketServer {
+	public static class ServerThread extends Thread {
+		private final Logger log = LoggerFactory.getLogger(getClass());
+		private final Server server;
+		
+		public ServerThread(Server server) {
+			super("Server-Thread");
+			this.server = server;
+		}
+
+		@Override
+		public void run() {
+			try {
+				server.join();
+				log.info("server stopped");
+			} catch (InterruptedException e) {
+				log.error("server interrupted", e);
+			}
+		}
+	}
+	
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	private int port;
 
+	private Server server = null;
+	
 	public void startServer() {
-		try {
-			final Server server = new Server(port);
+		if (server == null) {
+			try {
+				server = new Server(port);
 
-			ContextHandlerCollection collection = new ContextHandlerCollection();
-			server.setHandler(collection);
+				ContextHandlerCollection collection = new ContextHandlerCollection();
+				server.setHandler(collection);
 
-			ServletContextHandler context = new ServletContextHandler();
-			context.setContextPath("/jebu");
-			collection.addHandler(context);
-			// Initialize javax.websocket layer
-			ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-			// Add WebSocket endpoint to javax.websocket layer
-			
-			ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
-			ServerEndpointConfig config = configBuilder.build();
-			if (!config.getUserProperties().containsKey(JebuServerContext.JEBU_SERVER_CONTEXT)) {
-				config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, new JebuServerContext());
+				ServletContextHandler context = new ServletContextHandler();
+				context.setContextPath("/jebu");
+				collection.addHandler(context);
+				// Initialize javax.websocket layer
+				ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
+				// Add WebSocket endpoint to javax.websocket layer
+
+				ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
+				ServerEndpointConfig config = configBuilder.build();
+				if (!config.getUserProperties().containsKey(JebuServerContext.JEBU_SERVER_CONTEXT)) {
+					config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, new JebuServerContext());
+				}
+
+				wscontainer.addEndpoint(config);
+
+				//static content
+				final URL warUrl = JebuWebsocketServer.class.getClassLoader().getResource("de/nikem/jebu/site");
+				final String warUrlString = warUrl.toExternalForm();
+				log.debug("doc root: " + warUrlString);
+				collection.addHandler(new WebAppContext(warUrlString, "/"));
+				server.start();
+				
+				Thread t = new ServerThread(server);
+				t.setDaemon(true);
+				t.start();
+				log.info("Server started on port {}. Got to http://localhost:{}/ to start Jebu manager", port, port);
+			} catch (Exception e) {
+				throw new JebuException(e);
 			}
-			
-			wscontainer.addEndpoint(config);
-			
-			//static content
-			final URL warUrl = JebuWebsocketServer.class.getClassLoader().getResource("de/nikem/jebu/site");
-			final String warUrlString = warUrl.toExternalForm();
-			log.debug("doc root: " + warUrlString);
-			collection.addHandler(new WebAppContext(warUrlString, "/"));
-
-			server.start();
-			log.info("Server started on port {}. Got to http://localhost:{}/ to start Jebu manager", port, port);
-			server.join();
-		} catch (Exception e) {
-			throw new JebuException(e);
+		} else {
+			log.info("Server already started: {}", server.dump());
+		}
+	}
+	
+	public void stopServer() {
+		if (server != null) {
+			try {
+				server.stop();
+				server = null;
+			} catch (Exception e) {
+				log.error("can't stop server", e);
+			}
+		} else {
+			log.info("server already stopped");
 		}
 	}
 
 	public void setPort(int port) {
 		this.port = port;
-	}
-	
-	/**
-	 * Startet den Server auf Port 8080
-	 * @param args
-	 * @throws Exception
-	 */
-	public static void main(String[] args) {
-		JebuWebsocketServer ws = new JebuWebsocketServer();
-		ws.setPort(8080);
-		ws.startServer();
 	}
 }

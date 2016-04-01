@@ -1,4 +1,5 @@
 dependencies {
 	compile project(':jebu-api')
 	compile 'javax.websocket:javax.websocket-api:1.1'
+	runtime 'org.eclipse.jetty.websocket:javax-websocket-client-impl:9.3.7.v20160115'
 }

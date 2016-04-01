@@ -36,18 +36,9 @@ public class JettyDemo {
 			}
 		}
 		
-		Thread t = new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				JebuWebsocketServer server = new JebuWebsocketServer();
-				server.setPort(8080);
-				server.startServer();
-			}
-		});
-		t.setName("Server-Thread");
-		t.setDaemon(true);
-		t.start();
+		JebuWebsocketServer server = new JebuWebsocketServer();
+		server.setPort(8080);
+		server.startServer();
 		
 		Thread.sleep(3000);
 		
@@ -63,11 +54,13 @@ public class JettyDemo {
 		while (true) {
 			Thread.sleep(3000);
 			client.unsubscribe("test.event.2", s);
-			Thread.sleep(1000);
+			Thread.sleep(1500);
+			server.stopServer();
 			client.publish("test.event.2", "Hi 2!");
 			Thread.sleep(1000);
 			client.subscribe("test.event.2", s);
 			Thread.sleep(1000);
+			server.startServer();
 			client.publish("test.event.2", "Hoi 2!");
 		}
 	}
