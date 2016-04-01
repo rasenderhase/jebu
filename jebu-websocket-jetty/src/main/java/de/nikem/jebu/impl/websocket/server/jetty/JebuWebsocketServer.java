@@ -26,6 +26,8 @@ import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
  *      EventServer.java
  */
 public class JebuWebsocketServer {
+	private final Logger log = LoggerFactory.getLogger(getClass());
+	
 	public static class ServerThread extends Thread {
 		private final Logger log = LoggerFactory.getLogger(getClass());
 		private final Server server;
@@ -46,7 +48,6 @@ public class JebuWebsocketServer {
 		}
 	}
 	
-	private final Logger log = LoggerFactory.getLogger(getClass());
 	private int port;
 
 	private Server server = null;
