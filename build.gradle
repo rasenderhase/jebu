@@ -7,7 +7,7 @@ allprojects {
 	apply plugin: 'signing'
 	
 	group = 'de.nikem.jebu'
-	version = '0.1.0-SNAPSHOT'
+	version = '0.1.0'
 	def myName = name
 	def myDescription = 'Java Event BUs - a publish subscriber implementation for Java'
 		
