@@ -1,3 +1,5 @@
+description = 'Java Event BUs Websocket Client - subscriber implementation on jetty for communication over websocket'
+
 dependencies {
 	compile project(':jebu-api')
 	compile 'javax.websocket:javax.websocket-api:1.1'

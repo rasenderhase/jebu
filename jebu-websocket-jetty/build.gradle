@@ -1,3 +1,5 @@
+description = 'Java Event BUs Websocket Jetty Server - embedded server environment on jetty for hosting the JEBU websocket server'
+
 dependencies {
 	compile project(':jebu-websocket-server')
 	compile 'org.eclipse.jetty:jetty-server:9.3.7.v20160115'

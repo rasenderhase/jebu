@@ -1,15 +1,75 @@
+description = 'Java Event BUs - a publish subscriber implementation for Java'
 allprojects {
 	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'eclipse'
 	apply plugin: 'jacoco'
+	apply plugin: 'signing'
 	
 	group = 'de.nikem.jebu'
-	version = '0.1.0-SNAPSHOT'
-	
+	version = '0.1.0'
+	def myName = name
+	def myDescription = description
+		
 	sourceCompatibility = '1.8'
 	targetCompatibility = '1.8'
+	
+	configure(install.repositories.mavenInstaller) { 
+		pom.project {
+			name myName
+			groupId group
+			artifactId myName
+			version version
+			description = myDescription
+			url 'https://github.com/rasenderhase/jebu'
+			licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+			developers {
+				developer {
+					name 'Andreas Knees'
+					email 'andreas.knees@nikem.de'
+					organization 'nikem GmbH'
+					organizationUrl 'http://www.nikem.de'
+				}
+			}
+			scm {
+				connection 'scm:git:git@github.com/rasenderhase/jebu.git'
+				developerConnection 'scm:git:git@github.com/rasenderhase/jebu.git'
+				url 'scm:git:git@github.com/rasenderhase/jebu.git'
+			}
+		} 
 
+		task sourcesJar(type: Jar, dependsOn: classes) {
+		    classifier = 'sources'
+		    from sourceSets.main.allSource
+		}
+
+		task javadocJar(type: Jar, dependsOn: javadoc) {
+		    classifier = 'javadoc'
+		    from javadoc.destinationDir
+		}
+
+		artifacts {
+		    archives sourcesJar
+		    archives javadocJar
+		}
+		
+		signing {
+		    sign configurations.archives
+		}
+
+		task installAll {
+			dependsOn javadocJar
+			dependsOn sourcesJar
+			dependsOn install
+		}	
+	}
+	
 	dependencies {
 		compile 'org.slf4j:slf4j-api:1.7.20'
 		testCompile 'junit:junit:4.+'
@@ -52,8 +112,6 @@ allprojects {
 	
 	sourceSets.main.java.srcDirs += 'src/main/webapp'
 }
-
-
 
 jar {
 	manifest {

@@ -19,11 +19,10 @@ import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
 
 /**
  * Simple Jetty Server to start WebSocket interface of <i>jebu</i> event bus.
- * 
+ * <br><br>
+ * <a href='https://github.com/jetty-project/embedded-jetty-websocket-examples/blob/master/javax.websocket-example/src/main/java/org/eclipse/jetty/demo/EventServer.java'>see also</a>
  * @author andreas
- * @see https://github.com/jetty-project/embedded-jetty-websocket-examples/blob/
- *      master/javax.websocket-example/src/main/java/org/eclipse/jetty/demo/
- *      EventServer.java
+ * 
  */
 public class JebuWebsocketServer {
 	private final Logger log = LoggerFactory.getLogger(getClass());
