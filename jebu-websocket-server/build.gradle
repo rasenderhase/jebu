@@ -2,6 +2,5 @@ description = 'Java Event BUs Websocket Publisher - websocket implementation of 
 
 dependencies {
 	compile project(':jebu-api')
-	compile project(':jebu-websocket-client')
 	compile 'javax.websocket:javax.websocket-api:1.1'
 }
