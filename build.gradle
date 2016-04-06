@@ -7,34 +7,34 @@ allprojects {
 	apply plugin: 'signing'
 	
 	group = 'de.nikem.jebu'
-	version = '0.1.0'
+	version = '0.1.0-SNAPSHOT'
 	def myName = name
-	def myDescription = description
+	def myDescription = 'Java Event BUs - a publish subscriber implementation for Java'
 		
 	sourceCompatibility = '1.8'
 	targetCompatibility = '1.8'
 	
 	configure(install.repositories.mavenInstaller) { 
 		pom.project {
-			name myName
-			groupId group
-			artifactId myName
-			version version
+			name = myName
+			groupId = group
+			artifactId = myName
+			version = version
 			description = myDescription
 			url 'https://github.com/rasenderhase/jebu'
 			licenses {
                 license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
+                    name = 'The Apache Software License, Version 2.0'
+                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution = 'repo'
                 }
             }
 			developers {
 				developer {
-					name 'Andreas Knees'
-					email 'andreas.knees@nikem.de'
-					organization 'nikem GmbH'
-					organizationUrl 'http://www.nikem.de'
+					name = 'Andreas Knees'
+					email = 'andreas.knees@nikem.de'
+					organization = 'nikem GmbH'
+					organizationUrl = 'http://www.nikem.de'
 				}
 			}
 			scm {
@@ -67,7 +67,25 @@ allprojects {
 			dependsOn javadocJar
 			dependsOn sourcesJar
 			dependsOn install
-		}	
+		}
+		
+		uploadArchives {
+			repositories {
+				mavenDeployer {
+					beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+						authentication(userName: ossrhUsername, password: ossrhPassword)
+					}
+
+					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+						authentication(userName: ossrhUsername, password: ossrhPassword)
+					}
+					
+					pom = install.repositories.mavenInstaller.pom
+				}
+			}
+		}
 	}
 	
 	dependencies {
