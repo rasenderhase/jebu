@@ -1,3 +1,7 @@
+plugins {
+	id "com.bmuschko.nexus" version "2.3.1"
+}
+
 description = 'Java Event BUs - a publish subscriber implementation for Java'
 allprojects {
 	apply plugin: 'java'
@@ -5,11 +9,11 @@ allprojects {
 	apply plugin: 'eclipse'
 	apply plugin: 'jacoco'
 	apply plugin: 'signing'
+	apply plugin: 'com.bmuschko.nexus'
 	
 	group = 'de.nikem.jebu'
-	version = '0.1.0'
+	version = '0.2.0-SNAPSHOT'
 	def myName = name
-	def myDescription = 'Java Event BUs - a publish subscriber implementation for Java'
 		
 	sourceCompatibility = '1.8'
 	targetCompatibility = '1.8'
@@ -17,24 +21,24 @@ allprojects {
 	configure(install.repositories.mavenInstaller) { 
 		pom.project {
 			name = myName
-			groupId = group
-			artifactId = myName
-			version = version
-			description = myDescription
-			url 'https://github.com/rasenderhase/jebu'
-			licenses {
-                license {
-                    name = 'The Apache Software License, Version 2.0'
-                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution = 'repo'
-                }
-            }
+					groupId = group
+					artifactId = myName
+					version = version
+					description = description
+					url 'https://github.com/rasenderhase/jebu'
+					licenses {
+				license {
+					name = 'The Apache Software License, Version 2.0'
+							url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+							distribution = 'repo'
+				}
+			}
 			developers {
 				developer {
 					name = 'Andreas Knees'
-					email = 'andreas.knees@nikem.de'
-					organization = 'nikem GmbH'
-					organizationUrl = 'http://www.nikem.de'
+							email = 'andreas.knees@nikem.de'
+							organization = 'nikem GmbH'
+							organizationUrl = 'http://www.nikem.de'
 				}
 			}
 			scm {
@@ -43,50 +47,31 @@ allprojects {
 				url 'scm:git:git@github.com/rasenderhase/jebu.git'
 			}
 		} 
+	}
+	
+	uploadArchives {
+		repositories {
+			mavenDeployer {
+				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+				
+				pom = install.repositories.mavenInstaller.pom
 
-		task sourcesJar(type: Jar, dependsOn: classes) {
-		    classifier = 'sources'
-		    from sourceSets.main.allSource
-		}
+				repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+					authentication(userName: ossrhUsername, password: ossrhPassword)
+				}
 
-		task javadocJar(type: Jar, dependsOn: javadoc) {
-		    classifier = 'javadoc'
-		    from javadoc.destinationDir
-		}
-
-		artifacts {
-		    archives sourcesJar
-		    archives javadocJar
-		}
-		
-		signing {
-		    sign configurations.archives
-		}
-
-		task installAll {
-			dependsOn javadocJar
-			dependsOn sourcesJar
-			dependsOn install
-		}
-		
-		uploadArchives {
-			repositories {
-				mavenDeployer {
-					beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-					
-					pom = install.repositories.mavenInstaller.pom
-
-					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-						authentication(userName: ossrhUsername, password: ossrhPassword)
-					}
-
-					snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-						authentication(userName: ossrhUsername, password: ossrhPassword)
-					}
+				snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+					authentication(userName: ossrhUsername, password: ossrhPassword)
 				}
 			}
 		}
 	}
+	
+//	nexus {
+//		sign = true
+//		repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+//		snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+//	}
 	
 	dependencies {
 		compile 'org.slf4j:slf4j-api:1.7.20'
@@ -97,6 +82,7 @@ allprojects {
 	
 	repositories {
 		mavenCentral()
+		jcenter()
 	}
 	
 	test {
@@ -112,7 +98,7 @@ allprojects {
 	}
 	
 	check.dependsOn jacocoTestReport
-	
+		
 	[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
 	
 	eclipse {
@@ -146,7 +132,6 @@ task printGradleVersion << {
 	// Get current Gradle version as object.
 	final GradleVersion gradleVersion = GradleVersion.current()
 	 
-	// Print different properties.
 	println "Your Gradle version is ${gradleVersion.version}"
 	println "Base version: ${gradleVersion.baseVersion}"
 	println "Build time  : ${gradleVersion.buildTime}"
@@ -154,6 +139,7 @@ task printGradleVersion << {
 	println "Commit id   : ${gradleVersion.revision}"
 	println "Next major  : ${gradleVersion.nextMajor}"
 	println "Snapshot?   : ${gradleVersion.snapshot}"
+	println "OSSRH_USERNAME" : System.properties['signing.keyId']
 }
 
 eclipseJdt.dependsOn printGradleVersion
