@@ -12,5 +12,5 @@ hs_err_pid*
 /.project
 .gradle
 /.settings/
-
+.idea
 .DS_Store
