@@ -21,6 +21,8 @@ allprojects {
 	sourceCompatibility = '1.8'
 	targetCompatibility = '1.8'
 	
+	sourceSets.main.resources.srcDirs += 'src/main/webapp'
+	
 	configure(install.repositories.mavenInstaller) { 
 		pom.project {
 			name = myName
@@ -117,7 +119,6 @@ allprojects {
 		f.append('encoding/<project>=UTF-8')
 	}
 	
-	sourceSets.main.java.srcDirs += 'src/main/webapp'
 }
 
 jar {
