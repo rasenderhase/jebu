@@ -1,5 +1,7 @@
 package de.nikem.jebu.impl.websocket.server;
 
+import static de.nikem.jebu.util.Closer.close;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -49,7 +51,11 @@ public class JebuWebSocketSubscriber implements Subscriber {
 	 * @param data
 	 */
 	private void sendData(Object data) {
-		try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos);) {
+		ByteArrayOutputStream bos = null;
+		ObjectOutputStream out = null;
+		try {
+			bos = new ByteArrayOutputStream(); 
+			out = new ObjectOutputStream(bos);
 			out.writeObject(data);
 			out.flush();
 			ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
@@ -57,9 +63,12 @@ public class JebuWebSocketSubscriber implements Subscriber {
 		} catch (IOException e) {
 			log.debug("error during communication of session {}", session.getId());
 			throw new JebuRemoveSubscriberException(e);
+		} finally {
+			close(out);
+			close(bos);
 		}
 	}
-
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

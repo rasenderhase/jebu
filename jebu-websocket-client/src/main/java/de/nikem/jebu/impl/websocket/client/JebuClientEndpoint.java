@@ -1,10 +1,11 @@
 package de.nikem.jebu.impl.websocket.client;
 
+import static de.nikem.jebu.util.Closer.close;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.util.function.Function;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import de.nikem.jebu.api.EventBus;
 import de.nikem.jebu.impl.websocket.JebuWebsocketEvent;
+import de.nikem.jebu.util.function.Function;
 
 @ClientEndpoint
 public class JebuClientEndpoint {
@@ -40,7 +42,11 @@ public class JebuClientEndpoint {
 
 	@OnMessage
 	public void onMessage(byte[] message, Session session) {
-		try (InputStream is = new ByteArrayInputStream(message); ObjectInputStream ois = new ObjectInputStream(is);) {
+		InputStream is = null;
+		ObjectInputStream ois = null;
+		try {
+			is = new ByteArrayInputStream(message); 
+			ois = new ObjectInputStream(is);
 			JebuWebsocketEvent event = (JebuWebsocketEvent) ois.readObject();
 			switch (event.getAction()) {
 			case publish:
@@ -51,11 +57,16 @@ public class JebuClientEndpoint {
 				break;
 			}
 
-		} catch (IOException | ClassNotFoundException e) {
-			log.error("message processing error", System.err);
+		} catch (IOException e) {
+			log.error("message processing error", e);
+		} catch (ClassNotFoundException e) {
+			log.error("message processing error", e);
+		} finally {
+			close(is);
+			close(ois);
 		}
 	}
-
+	
 	@OnMessage
 	public void onMessage(String message, Session session) {
 		log.debug("String message: {}", message);

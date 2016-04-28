@@ -1,5 +1,7 @@
 package de.nikem.jebu.impl.websocket.client;
 
+import static de.nikem.jebu.util.Closer.close;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -23,6 +25,7 @@ import de.nikem.jebu.impl.EventBusImpl;
 import de.nikem.jebu.impl.JebuRemoveSubscriberException;
 import de.nikem.jebu.impl.websocket.JebuWebsocketEvent;
 import de.nikem.jebu.impl.websocket.JebuWebsocketEvent.Action;
+import de.nikem.jebu.util.function.Function;
 
 public class JebuWebSocketClient implements EventBus {
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -79,21 +82,37 @@ public class JebuWebSocketClient implements EventBus {
 	private Session getSession() {
 		if (session == null) {
 			log.info("trying to connect to {}" , uri);
-			WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+			final WebSocketContainer container = ContainerProvider.getWebSocketContainer();
 
-			JebuClientEndpoint client = new JebuClientEndpoint(clientJebu, (endpoint) -> {
-				boolean connected = false;
-				try {
-					session = container.connectToServer(endpoint, uri);
-					
-					//register all of my events
-					for (String eventName : clientJebu.getSubscriberMap().keySet()) {
-						JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.subscribe, null);
-						sendData(data);
+			JebuClientEndpoint client = new JebuClientEndpoint(clientJebu, new Function<JebuClientEndpoint, Boolean>() {
+				
+				@Override
+				public Boolean apply(JebuClientEndpoint endpoint) {
+
+					boolean connected = false;
+					try {
+						session = container.connectToServer(endpoint, uri);
+						
+						//register all of my events
+						for (String eventName : clientJebu.getSubscriberMap().keySet()) {
+							JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.subscribe, null);
+							sendData(data);
+						}
+						connected = true;
+						
+					} catch (DeploymentException e) {
+						logAndSleep(e);
+					} catch (IOException e) {
+						logAndSleep(e);
 					}
-					connected = true;
-					
-				} catch (DeploymentException | IOException e) {
+					return connected;
+				
+				}
+
+				/**
+				 * @param e
+				 */
+				protected void logAndSleep(Exception e) {
 					log.error("cannot establish connection to websocket server {}. Retry after {} ms.", e, getReconnectMs());
 					
 					try {
@@ -102,7 +121,6 @@ public class JebuWebSocketClient implements EventBus {
 						throw new JebuException(e1);
 					}
 				}
-				return connected;
 			});
 			
 			client.connect();
@@ -114,9 +132,14 @@ public class JebuWebSocketClient implements EventBus {
 	 * @param data
 	 */
 	private void sendData(Object data) {
+		ByteArrayOutputStream bos = null;
+		ObjectOutputStream out = null;
+		
 		Session session = getSession();
 		if (session != null) {
-			try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos);) {
+			try {
+				bos = new ByteArrayOutputStream(); 
+				out = new ObjectOutputStream(bos);
 				out.writeObject(data);
 				out.flush();
 				ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
@@ -124,12 +147,15 @@ public class JebuWebSocketClient implements EventBus {
 			} catch (IOException e) {
 				log.debug("error during communication of session {}", session.getId());
 				throw new JebuRemoveSubscriberException(e);
+			} finally {
+				close(bos);
+				close(out);
 			}
 		} else {
 			log.debug("Cannot send data. No connection.");
 		}
 	}
-
+	
 	public void setSession(Session session) {
 		this.session = session;
 	}
@@ -143,7 +169,7 @@ public class JebuWebSocketClient implements EventBus {
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, IOException {
-		Logger log = LoggerFactory.getLogger(JebuWebSocketClient.class);
+		final Logger log = LoggerFactory.getLogger(JebuWebSocketClient.class);
 		
 		URI serverUri = new URI(args[0]);
 		JebuWebSocketClient client = new JebuWebSocketClient(serverUri);

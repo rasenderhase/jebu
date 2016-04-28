@@ -18,7 +18,7 @@ public class JebuServerContext {
 	public static final String JEBU_SERVER_CONTEXT = "jebuServerContext";
 
 	private final EventBusImpl jebu = new EventBusImpl();
-	private final Collection<Session> managerSessions = Collections.synchronizedCollection(new HashSet<>());
+	private final Collection<Session> managerSessions = Collections.synchronizedCollection(new HashSet<Session>());
 	
 	public EventBusImpl getJebu() {
 		return jebu;

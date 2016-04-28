@@ -47,7 +47,7 @@ public class EventBusImpl implements EventBus {
 		Collection<Subscriber> subscriberCollection = getSubscriberMap().get(eventName);
 		if (subscriberCollection == null) {
 			log.trace("create subscriber collection for: {}", eventName);
-			subscriberCollection = Collections.synchronizedCollection(new LinkedHashSet<>());
+			subscriberCollection = Collections.synchronizedCollection(new LinkedHashSet<Subscriber>());
 			getSubscriberMap().put(eventName, subscriberCollection);
 		}
 		subscriberCollection.add(subscriber);

@@ -1,5 +1,7 @@
 package de.nikem.jebu.impl.websocket.server;
 
+import static de.nikem.jebu.util.Closer.close;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,7 +78,11 @@ public class JebuServerEndpoint {
 
 	private void onEventbusMessage(byte[] message, Session session) {
 		JebuWebsocketEvent event = null;
-		try (InputStream is = new ByteArrayInputStream(message); ObjectInputStream ois = new ObjectInputStream(is);) {
+		InputStream is = null;
+		ObjectInputStream ois = null;
+		try {
+			is = new ByteArrayInputStream(message); 
+			ois = new ObjectInputStream(is);
 			event = (JebuWebsocketEvent) ois.readObject();
 			log.trace("event from {}: {}", session.getId(), event);
 			EventBus jebu = getJebu();
@@ -98,14 +104,17 @@ public class JebuServerEndpoint {
 				log.error("unknown action {}", event.getAction());
 				break;
 			}
-				
-
-		} catch (IOException | ClassNotFoundException e) {
+		} catch (IOException e) {
 			log.error("message processing error", e);
+		} catch (ClassNotFoundException e) {
+			log.error("message processing error", e);
+		} finally {
+			close(is);
+			close(ois);
 		}
 		publishManagers(event, session);
 	}
-
+	
 	@OnMessage
 	public void onMessage(String message, Session session, @PathParam("path") String path) {
 		log.debug("String message: {}", message);
