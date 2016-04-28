@@ -19,9 +19,4 @@ public class JebuRemoveSubscriberException extends JebuException {
 	public JebuRemoveSubscriberException(String message, Throwable cause) {
 		super(message, cause);
 	}
-
-	public JebuRemoveSubscriberException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
-
 }
