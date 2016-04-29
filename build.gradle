@@ -12,12 +12,9 @@ allprojects {
 	apply plugin: 'com.bmuschko.nexus'
 	
 	group = 'de.nikem.jebu'
-	version = '0.2.0'
+	version = '0.3.0'
 	def myName = name
 	
-	def myOssrhUsername = hasProperty('ossrhUsername') ? ossrhUsername : ''
-	def myOssrhPassword = hasProperty('ossrhPassword') ? ossrhPassword : ''
-		
 	sourceCompatibility = '1.6'
 	targetCompatibility = '1.6'
 	
@@ -51,32 +48,8 @@ allprojects {
 				developerConnection 'scm:git:git@github.com/rasenderhase/jebu.git'
 				url 'scm:git:git@github.com/rasenderhase/jebu.git'
 			}
-		} 
-	}
-	
-	uploadArchives {
-		repositories {
-			mavenDeployer {
-				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-				
-				pom = install.repositories.mavenInstaller.pom
-
-				repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-					authentication(userName: myOssrhUsername, password: myOssrhPassword)
-				}
-
-				snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-					authentication(userName: myOssrhUsername, password: myOssrhPassword)
-				}
-			}
 		}
 	}
-	
-//	nexus {
-//		sign = true
-//		repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
-//		snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
-//	}
 	
 	dependencies {
 		compile 'org.slf4j:slf4j-api:1.7.20'
