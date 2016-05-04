@@ -27,6 +27,10 @@ import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
 public class JebuWebsocketServer {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
+	private JebuServerContext actualContext = null;
+	private int port;
+	private Server server = null;
+	
 	public static class ServerThread extends Thread {
 		private final Logger log = LoggerFactory.getLogger(getClass());
 		private final Server server;
@@ -47,10 +51,6 @@ public class JebuWebsocketServer {
 		}
 	}
 	
-	private int port;
-
-	private Server server = null;
-	
 	public void startServer() {
 		if (server == null) {
 			try {
@@ -69,7 +69,8 @@ public class JebuWebsocketServer {
 				ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
 				ServerEndpointConfig config = configBuilder.build();
 				if (!config.getUserProperties().containsKey(JebuServerContext.JEBU_SERVER_CONTEXT)) {
-					config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, new JebuServerContext());
+					actualContext = new JebuServerContext();
+					config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, actualContext);
 				}
 
 				wscontainer.addEndpoint(config);
@@ -98,6 +99,7 @@ public class JebuWebsocketServer {
 			try {
 				server.stop();
 				server = null;
+				actualContext = null;
 			} catch (Exception e) {
 				log.error("can't stop server", e);
 			}
@@ -108,5 +110,18 @@ public class JebuWebsocketServer {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+	
+	/**
+	 * Publish event directly from server jebu (no server client connection needed)
+	 * @param eventName
+	 * @param data
+	 */
+	void publish(String eventName, Object data) {
+		if (actualContext != null) {
+			actualContext.getJebu().publish(eventName, data);
+		} else {
+			log.debug("Lost event, because no server context: {}", eventName);
+		}
 	}
 }
