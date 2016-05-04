@@ -19,28 +19,27 @@ allprojects {
 	targetCompatibility = '1.6'
 	
 	sourceSets.main.resources.srcDirs += 'src/main/webapp'
-	
-	configure(install.repositories.mavenInstaller) { 
-		pom.project {
+
+
+	modifyPom {
+		project {
 			name = myName
-					groupId = group
-					artifactId = myName
-					version = version
-					description = description
-					url 'https://github.com/rasenderhase/jebu'
-					licenses {
+			description = description
+			url 'https://github.com/rasenderhase/jebu'
+
+			licenses {
 				license {
 					name = 'The Apache Software License, Version 2.0'
-							url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-							distribution = 'repo'
+					url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					distribution = 'repo'
 				}
 			}
 			developers {
 				developer {
 					name = 'Andreas Knees'
-							email = 'andreas.knees@nikem.de'
-							organization = 'nikem GmbH'
-							organizationUrl = 'http://www.nikem.de'
+					email = 'andreas.knees@nikem.de'
+					organization = 'nikem GmbH'
+					organizationUrl = 'http://www.nikem.de'
 				}
 			}
 			scm {
@@ -50,7 +49,13 @@ allprojects {
 			}
 		}
 	}
-	
+
+//	nexus {
+//		sign = true
+//		repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+//		snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+//	}
+
 	dependencies {
 		compile 'org.slf4j:slf4j-api:1.7.20'
 		testCompile 'junit:junit:4.12'
