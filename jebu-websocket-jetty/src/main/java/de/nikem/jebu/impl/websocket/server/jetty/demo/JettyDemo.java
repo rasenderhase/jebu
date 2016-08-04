@@ -1,5 +1,6 @@
 package de.nikem.jebu.impl.websocket.server.jetty.demo;
 
+import java.io.Serializable;
 import java.net.URI;
 
 import org.slf4j.Logger;
@@ -17,6 +18,21 @@ import de.nikem.jebu.impl.websocket.server.jetty.JebuWebsocketServer;
  */
 public class JettyDemo {
 
+	public static class Bean implements Serializable {
+		private final String key;
+		private final Object value;
+		public Bean(String key, Object value) {
+			this.key = key;
+			this.value = value;
+		}
+		public String getKey() {
+			return key;
+		}
+		public Object getValue() {
+			return value;
+		}
+	}
+	
 	public static void main(String[] args) throws Exception {
 		URI uri = new URI("ws://localhost:8080/jebu/eventbus/");
 		
@@ -55,13 +71,15 @@ public class JettyDemo {
 			Thread.sleep(3000);
 			client.unsubscribe("test.event.2", s);
 			Thread.sleep(1500);
-			server.stopServer();
+//			server.stopServer();
 			client.publish("test.event.2", "Hi 2!");
 			Thread.sleep(1000);
 			client.subscribe("test.event.2", s);
 			Thread.sleep(1000);
-			server.startServer();
+//			server.startServer();
+			Thread.sleep(1300);
 			client.publish("test.event.2", "Hoi 2!");
+			client.publish("test.event.1", new Bean("objekt", new Bean("message", "hi")));
 		}
 	}
 }

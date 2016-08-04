@@ -6,12 +6,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 
+import javax.json.Json;
+import javax.json.JsonException;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParser.Event;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.EndpointConfig;
@@ -30,6 +35,7 @@ import de.nikem.jebu.api.EventBus;
 import de.nikem.jebu.api.Subscriber;
 import de.nikem.jebu.impl.EventBusImpl;
 import de.nikem.jebu.impl.websocket.JebuWebsocketEvent;
+import de.nikem.jebu.impl.websocket.JebuWebsocketEvent.Action;
 
 /**
  * WebSocket implementation for jebu.<br>
@@ -75,6 +81,16 @@ public class JebuServerEndpoint {
 			log.debug("cannot handle manager message");
 		}
 	}
+	
+	@OnMessage
+	public void onMessage(String message, Session session, @PathParam("path") String path) {
+		log.debug("String message: {}", message);
+		if (PATH_EVENTBUS.equals(path)) {
+			onEventbusMessage(message, session);
+		} else if (PATH_MANAGER.equals(path)) {
+			log.debug("cannot handle manager message");
+		}
+	}
 
 	private void onEventbusMessage(byte[] message, Session session) {
 		JebuWebsocketEvent event = null;
@@ -84,26 +100,7 @@ public class JebuServerEndpoint {
 			is = new ByteArrayInputStream(message); 
 			ois = new ObjectInputStream(is);
 			event = (JebuWebsocketEvent) ois.readObject();
-			log.trace("event from {}: {}", session.getId(), event);
-			EventBus jebu = getJebu();
-			switch (event.getAction()) {
-			case subscribe:
-				jebu.subscribe(event.getEventName(), new JebuWebSocketSubscriber(session));
-				break;
-			case unsubscribe:
-				if (event.getEventName() != null) {
-					jebu.unsubscribe(event.getEventName(), new JebuWebSocketSubscriber(session));
-				} else {
-					jebu.unsubscribe(new JebuWebSocketSubscriber(session));
-				}
-				break;
-			case publish:
-				jebu.publish(event.getEventName(), event);
-				break;
-			default:
-				log.error("unknown action {}", event.getAction());
-				break;
-			}
+			onEventBusMessage(event, session, new JebuWebSocketSubscriber(session));
 		} catch (IOException e) {
 			log.error("message processing error", e);
 		} catch (ClassNotFoundException e) {
@@ -113,14 +110,76 @@ public class JebuServerEndpoint {
 			close(ois);
 		}
 		publishManagers(event, session);
+	}	
+	
+	private void onEventbusMessage(String message, Session session) {
+		JebuWebsocketEvent event = null;
+		StringReader is = null;
+		Action action = null;
+		String eventName = null;
+		String data = null;
+		try {
+			if ("ping".equals(message)) {
+				log.debug("ping received {}", session.getId());
+				return;
+			}
+			
+			is = new StringReader(message); 
+			JsonParser parser = Json.createParser(is);
+			
+			while (parser.hasNext()) {
+				Event e = parser.next();
+				if (e == Event.KEY_NAME) {
+					String key = parser.getString();
+					if ("action".equals(key)) {
+						parser.next();
+						action = Action.valueOf(parser.getString());
+					} else if ("eventName".equals(key)) {
+						parser.next();
+						eventName = parser.getString();
+					} else if ("data".equals(key)) {
+						parser.next();
+						data = parser.getString();
+					}
+				}
+			}
+			
+			event = new JebuWebsocketEvent(eventName, action, data);
+			onEventBusMessage(event, session, new JebuWebSocketJsonSubscriber(session));
+		} catch (JsonException e) {
+			log.error("message processing error", e);
+		} finally {
+			close(is);
+		}
+		publishManagers(event, session);
 	}
 	
-	@OnMessage
-	public void onMessage(String message, Session session, @PathParam("path") String path) {
-		log.debug("String message: {}", message);
-		//System.out.println("String-Nachricht: " + new String(Base64.getDecoder().decode(message)));
-		if (PATH_MANAGER.equals(path)) {
-			log.debug("cannot handle manager message");
+
+	/**
+	 * @param event
+	 * @param session
+	 * @param subscriber
+	 */
+	protected void onEventBusMessage(JebuWebsocketEvent event, Session session, final JebuWebSocketSubscriber subscriber) {
+		log.trace("event from {}: {}", session.getId(), event);
+		EventBus jebu = getJebu();
+		switch (event.getAction()) {
+		case subscribe:
+			jebu.subscribe(event.getEventName(), subscriber);
+			break;
+		case unsubscribe:
+			if (event.getEventName() != null) {
+				jebu.unsubscribe(event.getEventName(), subscriber);
+			} else {
+				jebu.unsubscribe(subscriber);
+			}
+			break;
+		case publish:
+			jebu.publish(event.getEventName(), event);
+			break;
+		default:
+			log.error("unknown action {}", event.getAction());
+			break;
 		}
 	}
 

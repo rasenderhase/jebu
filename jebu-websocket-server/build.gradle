@@ -3,4 +3,6 @@ description = 'Java Event BUs Websocket Publisher - websocket implementation of 
 dependencies {
 	compile project(':jebu-api')
 	compile 'javax.websocket:javax.websocket-api:1.1'
+	compile 'javax.json:javax.json-api:1.0'
+	runtime 'org.glassfish:javax.json:1.0.4'
 }

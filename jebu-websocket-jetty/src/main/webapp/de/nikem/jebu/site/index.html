@@ -55,19 +55,22 @@ table {
 		</thead>
 		<tbody></tbody>
 	</table>
+	<button id="subscribe">Subscribe</button><input id="eventName" value="test.event.1">
 </body>
 <script>
 (function () {
     "use strict";
 	var uri = "ws://" + location.host + location.pathname + "jebu/manager/",
-		Ws, ws, number = 0, t;
+		eventbusUri = "ws://" + location.host + location.pathname + "jebu/eventbus/",
+		Ws, ws, number = 0, t, testEvent1Ws;
     
-	
-	Ws = function (uri) {
+	Ws = function (options) {
     	var ws, closeHandler;
 
 		closeHandler = $.proxy(function (event) {
-			this.connectionBroken();
+			if (options.onconnectionbroken) {
+				options.onconnectionbroken();
+			}
 			try {
 				ws.close();
 				ws.onerror = null;
@@ -82,17 +85,8 @@ table {
    			t = setTimeout($.proxy(this.init, this), 3000);
         }, this);
 		
-		this.connectionEstablished = function () {
-			$("#managerConnection").removeClass("broken")
-				.addClass("established");
-		};
-		this.connectionBroken = function () {
-			$("#managerConnection").addClass("broken")
-				.removeClass("established");
-		};
-
     	this.init = function () {
-   			ws = new WebSocket(uri);
+   			ws = new WebSocket(options.uri);
 			
    			ws.onerror = closeHandler;
    			ws.onclose = closeHandler;
@@ -100,45 +94,19 @@ table {
    				console.log(evt);
    			}, this);
    			
-   			ws.onmessage = $.proxy(function (evt) {
-   				var json = JSON.parse(evt.data),
-   					tbody, tr;
-
-   				$("#managerSessions").html(json.managerSessions.length);
-   				this.connectionEstablished();
-
-   				//Subscribers
-   				tbody = $("tbody").eq(0);
-   				tbody.html("");
-   				
-   				$.each(json.subscriberMap, function (eventName, collection) {
-   					$.each(collection, function (idx, subscriberId) {
-   						var tr = $("<tr><td></td><td></td></tr>");
-   						tr.find("td").eq(0).append(document.createTextNode(eventName));
-   						tr.find("td").eq(1).append(document.createTextNode(subscriberId));
-   						tbody.append(tr);
-   					})
-   				});
-   				
-   				//Events
-   				if (json.event) {
-   					tbody = $("tbody").eq(1);
-   	   				if (tbody.find("tr").length < 10) {
-   						tr = $("<tr><td></td><td></td><td></td><td></td><td></td></tr>");
-   	   				} else {
-   	   					tr = tbody.find("tr").eq(0);
-   	   				}
-   					tr.find("td").eq(0).empty().append(document.createTextNode(json.event.sender));
-   					tr.find("td").eq(1).empty().append(document.createTextNode(json.event.action));
-   					tr.find("td").eq(2).empty().append(document.createTextNode(json.event.eventName));
-   					tr.find("td").eq(3).empty().append(document.createTextNode(json.event.timestamp));
-   					tr.find("td").eq(4).empty().append(document.createTextNode(json.event.data));
-   					tbody.append(tr);	
-   				}
-   				
-   			}, this);
+   			ws.onmessage = $.proxy(options.onmessage, this);
    			
    		};
+   		
+   		this.send = function (message) {
+   			if (ws) {
+   				ws.send(message);
+   				console.log("sent message");
+   			} else {
+   				console.log("no connection");
+   			}
+   		}
+   		
     	this.ping = function () {
    			try {
    				ws.send("ping");
@@ -152,9 +120,70 @@ table {
    		setInterval(this.ping, 5000);
     };
 	
-    ws = new Ws(uri);
+    ws = new Ws({ 
+    	uri: uri,
+    	onmessage : function (evt) {
+				var json = JSON.parse(evt.data),
+					tbody, tr;
+
+				$("#managerSessions").html(json.managerSessions.length);
+				$("#managerConnection").removeClass("broken")
+				.addClass("established");
+
+				//Subscribers
+				tbody = $("tbody").eq(0);
+				tbody.html("");
+				
+				$.each(json.subscriberMap, function (eventName, collection) {
+					$.each(collection, function (idx, subscriberId) {
+						var tr = $("<tr><td></td><td></td></tr>");
+						tr.find("td").eq(0).append(document.createTextNode(eventName));
+						tr.find("td").eq(1).append(document.createTextNode(subscriberId));
+						tbody.append(tr);
+					})
+				});
+				
+				//Events
+				if (json.event) {
+					tbody = $("tbody").eq(1);
+	   				if (tbody.find("tr").length < 10) {
+						tr = $("<tr><td></td><td></td><td></td><td></td><td></td></tr>");
+	   				} else {
+	   					tr = tbody.find("tr").eq(0);
+	   				}
+					tr.find("td").eq(0).empty().append(document.createTextNode(json.event.sender));
+					tr.find("td").eq(1).empty().append(document.createTextNode(json.event.action));
+					tr.find("td").eq(2).empty().append(document.createTextNode(json.event.eventName));
+					tr.find("td").eq(3).empty().append(document.createTextNode(json.event.timestamp));
+					tr.find("td").eq(4).empty().append(document.createTextNode(json.event.data));
+					tbody.append(tr);	
+				}
+				
+			},
+		onconnectionbroken : function () {
+			$("#managerConnection").addClass("broken")
+			.removeClass("established");
+		}
+    });
     ws.init();
 		
+    
+    testEvent1Ws = new Ws({
+    	uri : eventbusUri,
+    	onmessage : function (evt) {
+    		var json = JSON.parse(evt.data);
+    		console.log(json);
+    	}
+    });
+    
+    $("#subscribe").click(function () {
+    	testEvent1Ws.send(JSON.stringify({
+    		eventName : $("#eventName").val(),
+    		action : "subscribe",
+    		data : ""
+    	}));
+    });
+    
 }());
 </script>
 </html>

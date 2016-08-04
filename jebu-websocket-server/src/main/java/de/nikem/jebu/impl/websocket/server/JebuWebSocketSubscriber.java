@@ -35,6 +35,9 @@ public class JebuWebSocketSubscriber implements Subscriber {
 
 	@Override
 	public void publish(String eventName, Object data) {
+		if (!getSession().isOpen()) {
+			throw new JebuRemoveSubscriberException("session closed");
+		}
 		sendData(data);
 	}
 
@@ -50,7 +53,7 @@ public class JebuWebSocketSubscriber implements Subscriber {
 	/**
 	 * @param data
 	 */
-	private void sendData(Object data) {
+	protected void sendData(Object data) {
 		ByteArrayOutputStream bos = null;
 		ObjectOutputStream out = null;
 		try {
