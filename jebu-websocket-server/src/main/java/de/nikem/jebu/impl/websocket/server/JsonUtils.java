@@ -151,19 +151,7 @@ public class JsonUtils {
 
 	public static Object wrap(Object object) {
 		try {
-			if (object == null) {
-				return null;
-			}
-			if (object instanceof JsonObjectBuilder 
-					|| object instanceof JsonArrayBuilder
-					|| null == object 
-					|| object instanceof JsonValue
-					|| object instanceof Integer
-					|| object instanceof Long || object instanceof Boolean
-					|| object instanceof Double
-					|| object instanceof String 
-					|| object instanceof BigInteger
-					|| object instanceof BigDecimal) {
+			if (hasBasicDatatype(object)) {
 				return object;
 			}
 
@@ -187,6 +175,20 @@ public class JsonUtils {
 		} catch (Exception exception) {
 			return null;
 		}
+	}
+
+	private static boolean hasBasicDatatype(Object object) {
+		return object == null
+				|| object instanceof JsonObjectBuilder 
+				|| object instanceof JsonArrayBuilder
+				|| null == object 
+				|| object instanceof JsonValue
+				|| object instanceof Integer
+				|| object instanceof Long || object instanceof Boolean
+				|| object instanceof Double
+				|| object instanceof String 
+				|| object instanceof BigInteger
+				|| object instanceof BigDecimal;
 	}
 
 	private static Object wrapMap(Map<?, ?> object) {
