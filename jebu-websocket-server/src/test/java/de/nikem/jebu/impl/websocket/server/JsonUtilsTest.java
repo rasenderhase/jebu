@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 public class JsonUtilsTest {
 	private final Logger log = LoggerFactory.getLogger(getClass());
+	private TestObject testObject;
 
 	public static class TestObject {
 		private String name;
@@ -90,6 +91,7 @@ public class JsonUtilsTest {
 			return "gettyMethod";
 		}
 		public void getVoidThing() {
+			//nothing to do
 		}
 		public String get() {
 			return "get";
@@ -102,7 +104,6 @@ public class JsonUtilsTest {
 		}
 	}
 	
-	private TestObject testObject;
 	
 	@Before
 	public void setUp() throws Exception {
