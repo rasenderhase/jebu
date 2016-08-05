@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -167,26 +168,13 @@ public class JsonUtils {
 			}
 
 			if (object instanceof Collection) {
-				Collection<?> coll = (Collection<?>) object;
-				JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-				for (Object item : coll) {
-					add(arrayBuilder, wrap(item));
-				}
-				return arrayBuilder;
+				return wrapCollection((Collection<?>) object);
 			}
 			if (object.getClass().isArray()) {
-				JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-				for (Object item : ((Object[]) object)) {
-					add(arrayBuilder, wrap(item));
-				}
-				return arrayBuilder;
+				return wrapCollection(Arrays.asList(((Object[]) object)));
 			}
 			if (object instanceof Map) {
-				JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-				for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
-					add(objectBuilder, (String) entry.getKey(), wrap(entry.getValue()));
-				}
-				return objectBuilder;
+				return wrapMap((Map<?, ?>) object);
 			}
 			Package objectPackage = object.getClass().getPackage();
 			String objectPackageName = objectPackage != null ? objectPackage.getName() : "";
@@ -199,5 +187,21 @@ public class JsonUtils {
 		} catch (Exception exception) {
 			return null;
 		}
+	}
+
+	private static Object wrapMap(Map<?, ?> object) {
+		JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+		for (Map.Entry<?, ?> entry : object.entrySet()) {
+			add(objectBuilder, (String) entry.getKey(), wrap(entry.getValue()));
+		}
+		return objectBuilder;
+	}
+
+	private static Object wrapCollection(Collection<?> coll) {
+		JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+		for (Object item : coll) {
+			add(arrayBuilder, wrap(item));
+		}
+		return arrayBuilder;
 	}
 }
