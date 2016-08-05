@@ -117,7 +117,7 @@ public class JebuWebsocketServer {
 	 * @param eventName
 	 * @param data
 	 */
-	void publish(String eventName, Object data) {
+	public void publish(String eventName, Object data) {
 		if (actualContext != null) {
 			actualContext.getJebu().publish(eventName, data);
 		} else {
