@@ -44,7 +44,7 @@ import de.nikem.jebu.impl.websocket.JebuWebsocketEvent.Action;
  * @author uawet0ju
  *
  */
-@ServerEndpoint(value = "/{path}/")
+@ServerEndpoint(value = "/{path}")
 public class JebuServerEndpoint {
 	public final static String PATH_EVENTBUS = "eventbus";
 	public final static String PATH_MANAGER = "manager";
