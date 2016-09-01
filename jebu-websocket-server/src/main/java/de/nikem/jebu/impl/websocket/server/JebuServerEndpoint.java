@@ -54,6 +54,10 @@ public class JebuServerEndpoint {
 	private EventBusImpl jebu = null;
 	private Collection<Session> managerSessions = null;
 
+	public JebuServerEndpoint() {
+		log.debug("JebuServerEndpoint instantiation");
+	}
+	
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config, @PathParam("path") String path) {
 		log.debug("connect on {} {{}} from {}", this, path, session.getId());
