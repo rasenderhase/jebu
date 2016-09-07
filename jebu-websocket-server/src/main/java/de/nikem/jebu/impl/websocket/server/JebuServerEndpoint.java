@@ -44,10 +44,11 @@ import de.nikem.jebu.impl.websocket.JebuWebsocketEvent.Action;
  * @author uawet0ju
  *
  */
-@ServerEndpoint(value = "/{path}")
+@ServerEndpoint(value = "/{path}", configurator = JebuServerConfigurator.class)
 public class JebuServerEndpoint {
 	public final static String PATH_EVENTBUS = "eventbus";
 	public final static String PATH_MANAGER = "manager";
+	public static final int MAX_MESSAGE_BUFFER_SIZE = 10 * 1024 * 1024;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
@@ -61,9 +62,12 @@ public class JebuServerEndpoint {
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config, @PathParam("path") String path) {
 		log.debug("connect on {} {{}} from {}", this, path, session.getId());
+		session.setMaxBinaryMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE);
+		session.setMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE);
 		
 		JebuServerContext serverContext = (JebuServerContext) config.getUserProperties().get(JebuServerContext.JEBU_SERVER_CONTEXT);
 		if (serverContext == null) {
+			serverContext = new JebuServerContext();
 			config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, serverContext);
 		}
 		
@@ -190,7 +194,7 @@ public class JebuServerEndpoint {
 	@OnClose
 	public void onClose(Session session, CloseReason reason, @PathParam("path") String path) {
 		log.debug("Socket Closed: {}", reason);
-		if (PATH_MANAGER.equals(path)) {
+		if (PATH_MANAGER.equals(path) && getManagerSessions() != null) {
 			getManagerSessions().remove(session);
 			publishManagers();
 		} else if (PATH_EVENTBUS.equals(path)) {

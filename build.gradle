@@ -12,7 +12,7 @@ allprojects {
 	apply plugin: 'com.bmuschko.nexus'
 	
 	group = 'de.nikem.jebu'
-	version = '0.4.0-SNAPSHOT'
+	version = '0.5.0-SNAPSHOT'
 	def myName = name
 	
 	sourceCompatibility = '1.6'
@@ -20,6 +20,9 @@ allprojects {
 	
 	sourceSets.main.resources.srcDirs += 'src/main/webapp'
 
+	jacoco {
+	    toolVersion = "0.7.4+"	//see https://www.mkyong.com/gradle/gradle-jacoco-incompatible-version-1006/
+	}
 
 	modifyPom {
 		project {
@@ -107,7 +110,7 @@ jar {
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.12'
+	gradleVersion = '3.0'
 }
 
 task printGradleVersion << {

@@ -65,7 +65,9 @@ public class JebuWebSocketClient implements EventBus {
 		
 		if (!clientJebu.hasSubscribers(eventName)) {
 			JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.unsubscribe, null);
-			sendData(data);
+			if (getSession() != null) {
+				sendData(data);
+			}
 		}
 	}
 
@@ -75,11 +77,17 @@ public class JebuWebSocketClient implements EventBus {
 		
 		if (!clientJebu.hasSubscribers()) {
 			JebuWebsocketEvent data = new JebuWebsocketEvent(null, Action.unsubscribe, null);
-			sendData(data);
+			if (getSession() != null) {
+				sendData(data);
+			}
 		}
 	}
 
 	private Session getSession() {
+		return session;
+	}
+	
+	private Session getAndCreateSession() {
 		if (session == null) {
 			log.info("trying to connect to {}" , uri);
 			final WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -134,25 +142,30 @@ public class JebuWebSocketClient implements EventBus {
 	private void sendData(Object data) {
 		ByteArrayOutputStream bos = null;
 		ObjectOutputStream out = null;
-		
-		Session session = getSession();
-		if (session != null) {
-			try {
-				bos = new ByteArrayOutputStream(); 
-				out = new ObjectOutputStream(bos);
-				out.writeObject(data);
-				out.flush();
-				ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
-				session.getAsyncRemote().sendBinary(buf);
-			} catch (IOException e) {
-				log.debug("error during communication of session {}", session.getId());
-				throw new JebuRemoveSubscriberException(e);
-			} finally {
-				close(bos);
-				close(out);
-			}
-		} else {
+
+		Session session = getAndCreateSession();
+
+		if (session == null) {
 			log.debug("Cannot send data. No connection.");
+			return;
+		} else if (!session.isOpen()) {
+			log.debug("Cannot send data. connection not open.");
+			return;
+		}
+
+		try {
+			bos = new ByteArrayOutputStream(); 
+			out = new ObjectOutputStream(bos);
+			out.writeObject(data);
+			out.flush();
+			ByteBuffer buf = ByteBuffer.wrap(bos.toByteArray());
+			session.getAsyncRemote().sendBinary(buf);
+		} catch (IOException e) {
+			log.debug("error during communication of session {}", session.getId());
+			throw new JebuRemoveSubscriberException(e);
+		} finally {
+			close(bos);
+			close(out);
 		}
 	}
 	
