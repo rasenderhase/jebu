@@ -11,6 +11,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 
 import javax.json.Json;
@@ -52,8 +54,8 @@ public class JebuServerEndpoint {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
-	private EventBusImpl jebu = null;
-	private Collection<Session> managerSessions = null;
+	private final EventBusImpl jebu = new EventBusImpl();
+	private final Collection<Session> managerSessions = Collections.synchronizedCollection(new HashSet<Session>());
 
 	public JebuServerEndpoint() {
 		log.debug("JebuServerEndpoint instantiation");
@@ -66,13 +68,10 @@ public class JebuServerEndpoint {
 		session.setMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE);
 		
 		JebuServerContext serverContext = (JebuServerContext) config.getUserProperties().get(JebuServerContext.JEBU_SERVER_CONTEXT);
-		if (serverContext == null) {
-			serverContext = new JebuServerContext();
-			config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, serverContext);
+		if (serverContext != null) {
+			serverContext.setJebu(getJebu());
+			serverContext.setManagerSessions(getManagerSessions());
 		}
-		
-		jebu = serverContext.getJebu();
-		managerSessions = serverContext.getManagerSessions();
 		
 		if (PATH_MANAGER.equals(path)) {
 			getManagerSessions().add(session);
@@ -268,8 +267,11 @@ public class JebuServerEndpoint {
 			}
 			w.append('}');
 			for (Session managerSession : getManagerSessions()) {
+				log.trace("publish to manager session {}", managerSession);
 				managerSession.getAsyncRemote().sendText(w.toString());
 			}
+			log.trace("current status");
+			log.trace(w.toString());
 		} catch (IOException e) {
 			log.debug("JSON wirte error", e);
 		}

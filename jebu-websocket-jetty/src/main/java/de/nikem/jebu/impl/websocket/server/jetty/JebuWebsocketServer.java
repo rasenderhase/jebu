@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.nikem.jebu.api.JebuException;
+import de.nikem.jebu.impl.websocket.server.JebuServerConfigurator;
 import de.nikem.jebu.impl.websocket.server.JebuServerContext;
 import de.nikem.jebu.impl.websocket.server.JebuServerEndpoint;
 
@@ -67,7 +68,7 @@ public class JebuWebsocketServer {
 				// Add WebSocket endpoint to javax.websocket layer
 
 				ServerEndpointConfig.Builder configBuilder = ServerEndpointConfig.Builder.create(JebuServerEndpoint.class, "/{path}/");
-				ServerEndpointConfig config = configBuilder.build();
+				ServerEndpointConfig config = configBuilder.configurator(new JebuServerConfigurator()).build();
 				if (!config.getUserProperties().containsKey(JebuServerContext.JEBU_SERVER_CONTEXT)) {
 					actualContext = new JebuServerContext();
 					config.getUserProperties().put(JebuServerContext.JEBU_SERVER_CONTEXT, actualContext);
@@ -118,7 +119,7 @@ public class JebuWebsocketServer {
 	 * @param data
 	 */
 	public void publish(String eventName, Object data) {
-		if (actualContext != null) {
+		if (actualContext != null && actualContext.getJebu() != null) {
 			actualContext.getJebu().publish(eventName, data);
 		} else {
 			log.debug("Lost event, because no server context: {}", eventName);

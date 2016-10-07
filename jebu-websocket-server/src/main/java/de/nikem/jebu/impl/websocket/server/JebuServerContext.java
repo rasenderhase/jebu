@@ -1,8 +1,6 @@
 package de.nikem.jebu.impl.websocket.server;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 
 import javax.websocket.Session;
 
@@ -17,8 +15,8 @@ import de.nikem.jebu.impl.EventBusImpl;
 public class JebuServerContext {
 	public static final String JEBU_SERVER_CONTEXT = "jebuServerContext";
 
-	private final EventBusImpl jebu = new EventBusImpl();
-	private final Collection<Session> managerSessions = Collections.synchronizedCollection(new HashSet<Session>());
+	private EventBusImpl jebu;
+	private Collection<Session> managerSessions;
 	
 	public EventBusImpl getJebu() {
 		return jebu;
@@ -26,6 +24,14 @@ public class JebuServerContext {
 
 	public Collection<Session> getManagerSessions() {
 		return managerSessions;
+	}
+
+	public void setJebu(EventBusImpl jebu) {
+		this.jebu = jebu;
+	}
+
+	public void setManagerSessions(Collection<Session> managerSessions) {
+		this.managerSessions = managerSessions;
 	}
 
 }

@@ -31,6 +31,10 @@ public class JettyDemo {
 		public Object getValue() {
 			return value;
 		}
+		@Override
+		public String toString() {
+			return "Bean [" + key + "=" + value + "]";
+		}
 	}
 	
 	public static void main(String[] args) throws Exception {

@@ -28,12 +28,55 @@ import de.nikem.jebu.impl.websocket.JebuWebsocketEvent.Action;
 import de.nikem.jebu.util.function.Function;
 
 public class JebuWebSocketClient implements EventBus {
+	
+	private final class ConnectFunction implements Function<JebuClientEndpoint, Boolean> {
+		@Override
+		public Boolean apply(JebuClientEndpoint endpoint) {
+
+			boolean connected = false;
+			try {
+				final WebSocketContainer container = getContainer();
+				session = container.connectToServer(endpoint, uri);
+				connecting = false;
+				log.info("Connected. Register events.");
+
+				//register all of my events
+				for (String eventName : clientJebu.getSubscriberMap().keySet()) {
+					JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.subscribe, null);
+					sendData(data);
+				}
+				connected = true;
+			} catch (DeploymentException e) {
+				logAndSleep(e);
+			} catch (IOException e) {
+				logAndSleep(e);
+			}
+			return connected;
+
+		}
+
+		/**
+		 * @param e
+		 */
+		protected void logAndSleep(Exception e) {
+			log.error("cannot establish connection to websocket server {}. Retry after {} ms.", e, getReconnectMs());
+
+			try {
+				JebuWebSocketClient.this.wait(getReconnectMs());
+			} catch (Exception e1) {
+				throw new JebuException(e1);
+			}
+		}
+	}
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
 	private final URI uri;
 	private final EventBusImpl clientJebu;
 	private Session session = null;
 	private int reconnectMs = 3000;
+	private boolean connecting = false;
+	private WebSocketContainer container = null;
 	
 	public JebuWebSocketClient(URI uri) {
 		this.uri = uri;
@@ -88,50 +131,17 @@ public class JebuWebSocketClient implements EventBus {
 	}
 	
 	private Session getAndCreateSession() {
-		if (session == null) {
-			log.info("trying to connect to {}" , uri);
-			final WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-
-			JebuClientEndpoint client = new JebuClientEndpoint(clientJebu, new Function<JebuClientEndpoint, Boolean>() {
-				
-				@Override
-				public Boolean apply(JebuClientEndpoint endpoint) {
-
-					boolean connected = false;
-					try {
-						session = container.connectToServer(endpoint, uri);
-						
-						//register all of my events
-						for (String eventName : clientJebu.getSubscriberMap().keySet()) {
-							JebuWebsocketEvent data = new JebuWebsocketEvent(eventName, Action.subscribe, null);
-							sendData(data);
-						}
-						connected = true;
-						
-					} catch (DeploymentException e) {
-						logAndSleep(e);
-					} catch (IOException e) {
-						logAndSleep(e);
-					}
-					return connected;
-				
+		if (session == null && !connecting) {
+			synchronized (this) {
+				if (connecting) {
+					log.info("already connecting...");
+					return session;
 				}
 
-				/**
-				 * @param e
-				 */
-				protected void logAndSleep(Exception e) {
-					log.error("cannot establish connection to websocket server {}. Retry after {} ms.", e, getReconnectMs());
-					
-					try {
-						Thread.sleep(getReconnectMs());
-					} catch (Exception e1) {
-						throw new JebuException(e1);
-					}
-				}
-			});
-			
-			client.connect();
+				connecting = true;
+				log.info("trying to connect to {}" , uri);
+				new JebuClientEndpoint(clientJebu, new ConnectFunction()).connect();
+			}
 		}
 		return session;
 	}
@@ -200,5 +210,12 @@ public class JebuWebSocketClient implements EventBus {
 		});
 		System.out.println("press any key to stop client...");
 		System.in.read();
+	}
+
+	private WebSocketContainer getContainer() {
+		if (container == null) {
+			container = ContainerProvider.getWebSocketContainer();
+		}
+		return container;
 	}
 }
